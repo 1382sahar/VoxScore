@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بُردبان | دستیار صوتی ثبت امتیاز و ماشین‌حساب فارسی</title>
+
+  <!-- Persian & Latin Typography (Vazirmatn + Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Configure Tailwind to use Vazirmatn for Persian text and Inter for Latin/numbers
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Vazirmatn', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['Inter', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-800 overflow-x-hidden">
+
+  <!-- ===================================================================== -->
+  <!-- TOP NAVIGATION BAR                                                    -->
+  <!-- ===================================================================== -->
+  <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-slate-200/80">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <!-- Brand Identity -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+          <!-- Microphone SVG Icon -->
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+          </svg>
+        </div>
+        <div class="truncate">
+          <h1 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight truncate">بُردبان</h1>
+          <p class="text-xs text-slate-500 truncate">دستیار صوتی امتیاز و ماشین‌حساب فارسی</p>
+        </div>
+      </div>
+
+      <!-- Browser Compatibility Badge & Export Button -->
+      <div class="flex items-center gap-2 shrink-0">
+        <span id="speechSupportBadge" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          آماده شنیدن (fa-IR)
+        </span>
+        <button
+          id="openSchemaModalBtn"
+          type="button"
+          class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5"
+          title="مشاهده و کپی ساختار JSON آماده برای Firestore"
+        >
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+          </svg>
+          <span class="hidden sm:inline">خروجی Firestore</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-5xl mx-auto px-4 pb-2.5">
+      <nav class="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-2xl" aria-label="بخش‌های برنامه">
+        <button data-tab="scoreboard" type="button" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition bg-white text-indigo-700 shadow-sm">
+          تابلوی بازی زنده
+        </button>
+        <button data-tab="calculator" type="button" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-600 hover:text-slate-900">
+          ماشین‌حساب صوتی
+        </button>
+        <button data-tab="history" type="button" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-600 hover:text-slate-900">
+          سوابق و پرسش هوشمند
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN CONTAINER                                                        -->
+  <!-- ===================================================================== -->
+  <main class="max-w-5xl mx-auto px-4 py-5 space-y-5 pb-16">
+
+    <!-- Unsupported Browser Notice (hidden automatically if Web Speech API is supported) -->
+    <div id="unsupportedAlert" class="hidden rounded-2xl bg-amber-50 border border-amber-200 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+        </svg>
+      </div>
+      <div class="text-xs sm:text-sm text-amber-900 leading-relaxed">
+        <strong>مرورگر شما از Web Speech API پشتیبانی نمی‌کند.</strong> برای استفاده از میکروفون فارسی، صفحه را در مرورگر <strong>Google Chrome</strong> یا <strong>Edge</strong> (روی HTTPS یا localhost) باز کنید. با این حال، همچنان می‌توانید تمام فرمان‌ها را در کادر متنی پایین تایپ یا روی مثال‌ها کلیک کنید.
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- VOICE COMMAND CONSOLE (ALWAYS ACCESSIBLE HERO CARD)                 -->
+    <!-- =================================================================== -->
+    <section class="rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 shadow-xl shadow-indigo-950/15 relative overflow-hidden">
+      <!-- Subtle Decorative Circles -->
+      <div class="pointer-events-none absolute -left-12 -top-12 w-44 h-44 rounded-full bg-indigo-500/20 blur-2xl"></div>
+      <div class="pointer-events-none absolute -right-10 -bottom-14 w-48 h-48 rounded-full bg-violet-500/15 blur-2xl"></div>
+
+      <div class="relative z-10 flex flex-col md:flex-row items-center gap-5">
+        <!-- Microphone Action Button -->
+        <div class="flex flex-col items-center gap-2 shrink-0">
+          <div class="relative flex items-center justify-center">
+            <!-- Animated Listening Pulse Ring -->
+            <span id="micPulseRing" class="hidden absolute inline-flex h-24 w-24 rounded-full bg-rose-500/40 animate-ping"></span>
+            <button
+              id="micToggleBtn"
+              type="button"
+              aria-label="شروع یا توقف ضبط صدا"
+              class="relative w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 hover:from-indigo-400 hover:to-violet-400 active:scale-95 transition shadow-lg shadow-indigo-500/40 flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-indigo-400/50"
+            >
+              <svg id="micIcon" class="w-9 h-9 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+              </svg>
+            </button>
+          </div>
+          <span id="micStatusText" class="text-xs font-medium text-indigo-200">برای صحبت کلیک کن</span>
+        </div>
+
+        <!-- Live Transcript, Text Input Fallback & Last Result -->
+        <div class="w-full flex-1 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/10 text-indigo-200 border border-white/10">فارسی (fa-IR)</span>
+              <span id="engineStatusPill" class="text-xs text-slate-300">هم امتیاز بازی و هم محاسبه ریاضی را می‌فهمد</span>
+            </div>
+            <!-- Continuous Mode Switch -->
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300">
+              <input id="continuousToggle" type="checkbox" class="w-4 h-4 rounded accent-indigo-500" />
+              <span>شنیدن پیوسته</span>
+            </label>
+          </div>
+
+          <!-- Live Transcript Box -->
+          <div class="rounded-2xl bg-white/10 border border-white/15 px-4 py-3 min-h-[58px] flex items-center justify-between gap-3">
+            <p id="liveTranscript" class="text-sm sm:text-base font-medium text-white/95 leading-relaxed break-words">
+              مثلاً بگو: «۱۰ رو منهای ۳ کن» یا «۲۰ امتیاز به سارا اضافه کن»
+            </p>
+            <button id="voiceUndoQuickBtn" type="button" class="shrink-0 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-amber-200 transition hidden" title="بازگردانی آخرین امتیاز">
+              بازگشت (Undo)
+            </button>
+          </div>
+
+          <!-- Manual / Fallback Input Form -->
+          <form id="manualCommandForm" class="flex flex-col sm:flex-row gap-2">
+            <input
+              id="manualCommandInput"
+              type="text"
+              placeholder="یا فرمان فارسی را اینجا بنویس و Enter بزن..."
+              class="flex-1 rounded-xl bg-slate-800/80 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+            <button
+              type="submit"
+              class="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 active:scale-[0.99] text-white text-sm font-bold transition shadow-md shadow-indigo-900/40 shrink-0"
+            >
+              اجرای فرمان
+            </button>
+          </form>
+
+          <!-- Last Instant Result Banner -->
+          <div id="instantResultBox" class="hidden rounded-2xl bg-emerald-500/15 border border-emerald-400/30 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-sm text-emerald-100">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0"></span>
+              <span id="instantResultText"></span>
+            </div>
+            <div id="instantResultActions" class="flex items-center gap-2"></div>
+          </div>
+
+          <!-- Quick Clickable Demo Chips -->
+          <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <span class="text-[11px] text-slate-400 ml-1">تست سریع:</span>
+            <button type="button" class="demo-chip px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 transition">۱۰ رو منهای ۳ کن</button>
+            <button type="button" class="demo-chip px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 transition">۲۰ امتیاز به سارا اضافه کن</button>
+            <button type="button" class="demo-chip px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 transition">از رضا ۵ تا کم کن</button>
+            <button type="button" class="demo-chip px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 transition">بیست و پنج ضربدر چهار</button>
+            <button type="button" class="demo-chip px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-amber-200 transition">قبلی رو برگردون</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 1: LIVE GAME SCOREBOARD                                         -->
+    <!-- =================================================================== -->
+    <section id="tab-scoreboard" class="tab-panel space-y-5">
+      <!-- Game Metadata Bar -->
+      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900">مشخصات بازی فعلی</h2>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="finishGameBtn" type="button" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm">
+              ثبت پایان بازی در سوابق
+            </button>
+            <button id="resetScoresBtn" type="button" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+              صفر کردن امتیازها
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="gameNameInput" class="block text-xs font-medium text-slate-500 mb-1">نام بازی</label>
+            <input id="gameNameInput" type="text" placeholder="مثلاً: حکم، کتان، مافیا..." class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label for="gameLocationInput" class="block text-xs font-medium text-slate-500 mb-1">مکان / یادداشت دورهمی</label>
+            <input id="gameLocationInput" type="text" placeholder="مثلاً: دورهمی خانه علی" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label for="targetScoreInput" class="block text-xs font-medium text-slate-500 mb-1">سقف امتیاز برنده (اختیاری)</label>
+            <input id="targetScoreInput" type="number" placeholder="مثلاً: 100" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Players Grid + Add Player Form -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Players List (2 cols on desktop) -->
+        <div class="lg:col-span-2 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-sm sm:text-base font-bold text-slate-900">تابلوی امتیازات زنده</h2>
+            <form id="addPlayerForm" class="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                id="newPlayerNameInput"
+                type="text"
+                placeholder="نام بازیکن جدید..."
+                class="flex-1 sm:w-44 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold transition shrink-0">
+                + افزودن
+              </button>
+            </form>
+          </div>
+
+          <div id="playersContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Dynamically rendered player cards -->
+          </div>
+        </div>
+
+        <!-- Live Rounds Log (1 col on desktop) -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm flex flex-col max-h-[460px]">
+          <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+            <h3 class="text-sm font-bold text-slate-900">لاگ دست‌به‌دست (Rounds)</h3>
+            <button id="undoRoundBtn" type="button" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold transition">
+              بازگشت (Undo)
+            </button>
+          </div>
+          <div id="roundsLogContainer" class="flex-1 overflow-y-auto divide-y divide-slate-100 mt-2 space-y-1">
+            <!-- Dynamically rendered round entries -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: VOICE MATH CALCULATOR                                        -->
+    <!-- =================================================================== -->
+    <section id="tab-calculator" class="tab-panel hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <!-- Big Result Display -->
+        <div class="lg:col-span-2 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm flex flex-col justify-between gap-5">
+          <div>
+            <span class="inline-block px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-3">ماشین‌حساب صوتی امن</span>
+            <p class="text-xs text-slate-500 mb-1">آخرین جمله شنیده‌شده:</p>
+            <p id="calcSpokenText" class="text-sm font-semibold text-slate-800 bg-slate-50 rounded-xl p-3 border border-slate-100 min-h-[48px]">
+              هنوز محاسبه‌ای انجام نشده است.
+            </p>
+          </div>
+
+          <div class="rounded-2xl bg-slate-900 text-white p-5 text-left" dir="ltr">
+            <div id="calcFormulaDisplay" class="text-sm font-mono text-indigo-300 min-h-[22px] break-all">0</div>
+            <div id="calcResultDisplay" class="text-4xl font-extrabold font-mono text-white mt-1 break-all">0</div>
+          </div>
+
+          <div class="text-xs text-slate-500 leading-relaxed bg-slate-50 rounded-xl p-3 border border-slate-100">
+            <strong class="text-slate-700 block mb-1">الگوهای پشتیبانی‌شده:</strong>
+            جمع (به اضافه، بعلاوه)، تفریق (منهای، از ... کم کن)، ضرب (ضربدر)، تقسیم (تقسیم بر)، توان (به توان) و درصد (مثلاً «۱۰ درصد ۲۰۰»).
+          </div>
+        </div>
+
+        <!-- Calculation History List -->
+        <div class="lg:col-span-3 rounded-3xl bg-white border border-slate-200 p-5 shadow-sm flex flex-col">
+          <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+            <h2 class="text-sm sm:text-base font-bold text-slate-900">تاریخچه محاسبات صوتی</h2>
+            <button id="clearCalcHistoryBtn" type="button" class="text-xs font-semibold text-rose-600 hover:text-rose-700 px-2.5 py-1 rounded-lg hover:bg-rose-50 transition">
+              پاک کردن تاریخچه
+            </button>
+          </div>
+          <div id="calcHistoryList" class="divide-y divide-slate-100 mt-2 max-h-[380px] overflow-y-auto">
+            <!-- Dynamically rendered calculation logs -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: ARCHIVE, PLAYER STATS & SMART RAG-LIKE Q&A                   -->
+    <!-- =================================================================== -->
+    <section id="tab-history" class="tab-panel hidden space-y-5">
+      <!-- Smart Local Query Bar (Simulates Hybrid RAG over saved games) -->
+      <div class="rounded-3xl bg-gradient-to-l from-violet-50 to-indigo-50 border border-indigo-200/80 p-5 shadow-sm space-y-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900">پرسش هوشمند از سوابق بازی‌ها (پیش‌نمایش RAG)</h2>
+            <p class="text-xs text-slate-600">سوال فارسی بپرس تا روی متادیتا و نتایج ذخیره‌شده محاسبه و جستجو شود</p>
+          </div>
+        </div>
+
+        <form id="historyQueryForm" class="flex flex-col sm:flex-row gap-2">
+          <input
+            id="historyQueryInput"
+            type="text"
+            placeholder="مثلاً: کی بیشتر از همه برده؟ یا آخرین بازی چی بوده؟ یا آمار سارا"
+            class="flex-1 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+          />
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition shrink-0">
+            جستجو و تحلیل
+          </button>
+        </form>
+
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" class="rag-chip px-2.5 py-1 rounded-lg bg-white/80 hover:bg-white border border-indigo-200/70 text-xs text-violet-800 transition">کی بیشتر از همه برده؟</button>
+          <button type="button" class="rag-chip px-2.5 py-1 rounded-lg bg-white/80 hover:bg-white border border-indigo-200/70 text-xs text-violet-800 transition">آخرین بازی چی بوده؟</button>
+          <button type="button" class="rag-chip px-2.5 py-1 rounded-lg bg-white/80 hover:bg-white border border-indigo-200/70 text-xs text-violet-800 transition">بیشترین رکورد امتیاز مال کیه؟</button>
+          <button type="button" class="rag-chip px-2.5 py-1 rounded-lg bg-white/80 hover:bg-white border border-indigo-200/70 text-xs text-violet-800 transition">آمار سارا</button>
+        </div>
+
+        <div id="historyQueryAnswer" class="hidden rounded-2xl bg-white border border-violet-200 p-4 text-sm text-slate-800 leading-relaxed shadow-sm"></div>
+      </div>
+
+      <!-- Player Profiles Summary -->
+      <div class="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm space-y-3">
+        <h3 class="text-sm sm:text-base font-bold text-slate-900">پروفایل آماری بازیکنان (کالکشن players)</h3>
+        <div id="playerStatsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- Dynamically rendered player stats -->
+        </div>
+      </div>
+
+      <!-- Saved Games Archive -->
+      <div class="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-sm sm:text-base font-bold text-slate-900">آرشیو بازی‌های پایان‌یافته (کالکشن games)</h3>
+          <input
+            id="archiveFilterInput"
+            type="text"
+            placeholder="فیلتر بر اساس نام بازی یا بازیکن..."
+            class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+          />
+        </div>
+        <div id="gamesArchiveContainer" class="space-y-3">
+          <!-- Dynamically rendered archived games -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- FIRESTORE JSON EXPORT MODAL                                           -->
+  <!-- ===================================================================== -->
+  <div id="schemaModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">ساختار داده آماده برای Firebase Firestore</h3>
+          <p class="text-xs text-slate-500">مطابق با کالکشن‌های players، games و rounds (آماده برای فاز RAG)</p>
+        </div>
+        <button id="closeSchemaModalBtn" type="button" class="p-2 rounded-xl hover:bg-slate-100 text-slate-500">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-4 overflow-y-auto flex-1 bg-slate-950 text-emerald-300 font-mono text-xs leading-relaxed" dir="ltr">
+        <pre id="firestoreJsonPreview" class="whitespace-pre-wrap break-words"></pre>
+      </div>
+      <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+        <button id="copyFirestoreJsonBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition">
+          کپی کل JSON
+        </button>
+        <button id="closeSchemaModalBtn2" type="button" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition">
+          بستن
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- CUSTOM CONFIRMATION MODAL (NEVER USES alert/confirm)                  -->
+  <!-- ===================================================================== -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+      <h3 id="confirmModalTitle" class="text-base font-bold text-slate-900">تایید عملیات</h3>
+      <p id="confirmModalMessage" class="text-sm text-slate-600 leading-relaxed"></p>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button id="confirmCancelBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">انصراف</button>
+        <button id="confirmOkBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition">تایید</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- TOAST NOTIFICATION CONTAINER                                          -->
+  <!-- ===================================================================== -->
+  <div id="toastContainer" class="fixed bottom-4 left-4 right-4 sm:right-auto sm:w-96 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION JAVASCRIPT                                                -->
+  <!-- ===================================================================== -->
+  <script>
+    (() => {
+      'use strict';
+
+      /* =====================================================================
+       * 1. STATE & PERSISTENCE (FIRESTORE-READY LOCAL SCHEMA)
+       * ===================================================================== */
+      const STORAGE_KEY = 'bordban_voice_app_v1';
+
+      /**
+       * Default starter state so the user can test voice commands immediately.
+       */
+      function createDefaultState() {
+        return {
+          activeGame: {
+            id: 'game_' + Date.now(),
+            game_name: 'حکم دورهمی',
+            location: 'دورهمی دوستانه',
+            target_score: 100,
+            status: 'active',
+            created_at: new Date().toISOString(),
+            players: [
+              { id: 'p_sara', name: 'سارا', score: 35 },
+              { id: 'p_reza', name: 'رضا', score: 25 },
+              { id: 'p_ali', name: 'علی', score: 20 },
+            ],
+            rounds: [
+              {
+                id: 'r_init_1',
+                round_number: 1,
+                raw_text: 'شروع بازی با امتیازهای اولیه برای تست سریع',
+                actions: [
+                  { player_id: 'p_sara', player_name: 'سارا', operation: 'ADD', value: 35 },
+                  { player_id: 'p_reza', player_name: 'رضا', operation: 'ADD', value: 25 },
+                  { player_id: 'p_ali', player_name: 'علی', operation: 'ADD', value: 20 },
+                ],
+                reverted: false,
+                created_at: new Date().toISOString(),
+              },
+            ],
+          },
+          calcHistory: [
+            {
+              id: 'c_demo_1',
+              raw_text: '۱۰ رو منهای ۳ کن',
+              expression: '10 - 3',
+              result: 7,
+              created_at: new Date().toISOString(),
+            },
+          ],
+          archivedGames: [
+            {
+              id: 'game_sample_1',
+              game_name: 'کتان',
+              location: 'خانه علی',
+              status: 'completed',
+              created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+              ended_at: new Date(Date.now() - 86400000 * 3 + 3600000).toISOString(),
+              scores: { سارا: 12, رضا: 9, علی: 7 },
+              winner_names: ['سارا'],
+              summary_text: 'بازی کتان در خانه علی برگزار شد و سارا با ۱۲ امتیاز برنده شد.',
+            },
+          ],
+        };
+      }
+
+      /**
+       * Load state safely from localStorage with fallback to defaults.
+       */
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return createDefaultState();
+          const parsed = JSON.parse(raw);
+          if (!parsed || !parsed.activeGame || !Array.isArray(parsed.activeGame.players)) {
+            return createDefaultState();
+          }
+          return parsed;
+        } catch (err) {
+          console.error('Failed to load saved state:', err);
+          return createDefaultState();
+        }
+      }
+
+      /**
+       * Save state safely to localStorage.
+       */
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (err) {
+          console.error('Failed to persist state:', err);
+        }
+      }
+
+      let state = loadState();
+      let isListening = false;
+      let recognition = null;
+      let pendingConfirmCallback = null;
+
+      /* =====================================================================
+       * 2. PERSIAN TEXT NORMALIZER & NUMBER WORD CONVERTER
+       * ===================================================================== */
+
+      /**
+       * Convert Persian & Arabic numerals to Latin digits and standardize characters.
+       */
+      function normalizePersianText(input) {
+        if (!input) return '';
+        const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+        const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+
+        let text = String(input).trim();
+        // Convert numerals
+        text = text.replace(/[۰-۹]/g, (d) => String(persianDigits.indexOf(d)));
+        text = text.replace(/[٠-٩]/g, (d) => String(arabicDigits.indexOf(d)));
+
+        // Standardize Arabic letters to Persian equivalents & normalize punctuation
+        text = text
+          .replace(/ي/g, 'ی')
+          .replace(/ك/g, 'ک')
+          .replace(/ة/g, 'ه')
+          .replace(/[\u200c\u00a0]/g, ' ') // Replace ZWNJ and NBSP with space for clean tokenization
+          .replace(/[،؛؟?!]/g, ' , ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        return text;
+      }
+
+      // Persian spoken number dictionaries
+      const PERSIAN_UNITS = {
+        'صفر': 0, 'یک': 1, 'یه': 1, 'دو': 2, 'سه': 3, 'چهار': 4, 'چار': 4,
+        'پنج': 5, 'شش': 6, 'شیش': 6, 'هفت': 7, 'هشت': 8, 'نه': 9,
+        'ده': 10, 'یازده': 11, 'دوازده': 12, 'سیزده': 13, 'چهارده': 14,
+        'پانزده': 15, 'پونزده': 15, 'شانزده': 16, 'شونزده': 16, 'هفده': 17,
+        'هیجده': 18, 'هجده': 18, 'نوزده': 19,
+      };
+
+      const PERSIAN_TENS = {
+        'بیست': 20, 'سی': 30, 'چهل': 40, 'پنجاه': 50,
+        'شصت': 60, 'هفتاد': 70, 'هشتاد': 80, 'نود': 90,
+      };
+
+      const PERSIAN_HUNDREDS = {
+        'صد': 100, 'یکصد': 100, 'دویست': 200, 'سیصد': 300, 'چهارصد': 400,
+        'پانصد': 500, 'پونصد': 500, 'ششصد': 600, 'شیشصد': 600,
+        'هفتصد': 700, 'هشتصد': 800, 'نهصد': 900,
+      };
+
+      const PERSIAN_SCALES = {
+        'هزار': 1000,
+        'میلیون': 1000000,
+      };
+
+      /**
+       * Check if a single token is a Persian number word.
+       */
+      function isNumberWord(word) {
+        return (
+          Object.prototype.hasOwnProperty.call(PERSIAN_UNITS, word) ||
+          Object.prototype.hasOwnProperty.call(PERSIAN_TENS, word) ||
+          Object.prototype.hasOwnProperty.call(PERSIAN_HUNDREDS, word) ||
+          Object.prototype.hasOwnProperty.call(PERSIAN_SCALES, word)
+        );
+      }
+
+      /**
+       * Parse a contiguous sequence of Persian number tokens (e.g., ["دویست", "و", "پنجاه", "و", "سه"]) -> 253.
+       */
+      function parsePersianNumberSequence(tokens) {
+        let total = 0;
+        let current = 0;
+
+        for (const token of tokens) {
+          if (token === 'و') continue;
+          if (Object.prototype.hasOwnProperty.call(PERSIAN_UNITS, token)) {
+            current += PERSIAN_UNITS[token];
+          } else if (Object.prototype.hasOwnProperty.call(PERSIAN_TENS, token)) {
+            current += PERSIAN_TENS[token];
+          } else if (Object.prototype.hasOwnProperty.call(PERSIAN_HUNDREDS, token)) {
+            current += PERSIAN_HUNDREDS[token];
+          } else if (Object.prototype.hasOwnProperty.call(PERSIAN_SCALES, token)) {
+            const scale = PERSIAN_SCALES[token];
+            current = current === 0 ? scale : current * scale;
+            total += current;
+            current = 0;
+          }
+        }
+        return total + current;
+      }
+
+      /**
+       * Replace spoken Persian number sequences inside a sentence with numeric strings
+       * while preserving non-number words untouched.
+       */
+      function replacePersianNumberWords(text) {
+        const words = text.split(' ');
+        const output = [];
+        let i = 0;
+
+        while (i < words.length) {
+          if (isNumberWord(words[i])) {
+            const seq = [words[i]];
+            let j = i + 1;
+            // Greedily collect connected number words (optionally linked by "و")
+            while (j < words.length) {
+              if (isNumberWord(words[j])) {
+                seq.push(words[j]);
+                j++;
+              } else if (words[j] === 'و' && j + 1 < words.length && isNumberWord(words[j + 1])) {
+                seq.push(words[j]);
+                seq.push(words[j + 1]);
+                j += 2;
+              } else {
+                break;
+              }
+            }
+            const numericVal = parsePersianNumberSequence(seq);
+            output.push(String(numericVal));
+            i = j;
+          } else {
+            output.push(words[i]);
+            i++;
+          }
+        }
+        return output.join(' ');
+      }
+
+      /* =====================================================================
+       * 3. SAFE RECURSIVE-DESCENT MATH EVALUATOR (ZERO eval() USAGE)
+       * ===================================================================== */
+
+      /**
+       * Tokenize a cleaned mathematical expression into numbers, operators, and parentheses.
+       */
+      function tokenizeMath(expr) {
+        const tokens = [];
+        let i = 0;
+        while (i < expr.length) {
+          const ch = expr[i];
+          if (/\s/.test(ch)) {
+            i++;
+            continue;
+          }
+          if (/[0-9.]/.test(ch)) {
+            let numStr = '';
+            while (i < expr.length && /[0-9.]/.test(expr[i])) {
+              numStr += expr[i++];
+            }
+            const val = parseFloat(numStr);
+            if (Number.isNaN(val)) throw new Error('عدد نامعتبر در عبارت ریاضی');
+            tokens.push({ type: 'NUM', value: val });
+            continue;
+          }
+          if ('+-*/^()'.includes(ch)) {
+            tokens.push({ type: 'OP', value: ch });
+            i++;
+            continue;
+          }
+          throw new Error('کاراکتر غیرمجاز در عبارت ریاضی: ' + ch);
+        }
+        return tokens;
+      }
+
+      /**
+       * Evaluate a math string safely with standard operator precedence:
+       * Parentheses > Power (^) > Unary +/- > Multiply/Divide (*,/) > Add/Subtract (+,-)
+       */
+      function safeEvaluateMath(expr) {
+        const tokens = tokenizeMath(expr);
+        if (tokens.length === 0) throw new Error('عبارت خالی است');
+
+        let pos = 0;
+        const peek = () => tokens[pos];
+        const consume = () => tokens[pos++];
+
+        function parseExpression() {
+          let left = parseTerm();
+          while (peek() && peek().type === 'OP' && (peek().value === '+' || peek().value === '-')) {
+            const op = consume().value;
+            const right = parseTerm();
+            left = op === '+' ? left + right : left - right;
+          }
+          return left;
+        }
+
+        function parseTerm() {
+          let left = parsePower();
+          while (peek() && peek().type === 'OP' && (peek().value === '*' || peek().value === '/')) {
+            const op = consume().value;
+            const right = parsePower();
+            if (op === '/') {
+              if (right === 0) throw new Error('تقسیم بر صفر ممکن نیست');
+              left = left / right;
+            } else {
+              left = left * right;
+            }
+          }
+          return left;
+        }
+
+        function parsePower() {
+          let base = parseUnary();
+          if (peek() && peek().type === 'OP' && peek().value === '^') {
+            consume();
+            const exponent = parsePower(); // Right-associative
+            return Math.pow(base, exponent);
+          }
+          return base;
+        }
+
+        function parseUnary() {
+          if (peek() && peek().type === 'OP' && (peek().value === '+' || peek().value === '-')) {
+            const op = consume().value;
+            const val = parseUnary();
+            return op === '-' ? -val : val;
+          }
+          return parsePrimary();
+        }
+
+        function parsePrimary() {
+          const tok = peek();
+          if (!tok) throw new Error('عبارت ریاضی ناقص است');
+          if (tok.type === 'NUM') {
+            consume();
+            return tok.value;
+          }
+          if (tok.type === 'OP' && tok.value === '(') {
+            consume();
+            const val = parseExpression();
+            if (!peek() || peek().value !== ')') throw new Error('پرانتز بسته نشده است');
+            consume();
+            return val;
+          }
+          throw new Error('ساختار نامعتبر در عبارت ریاضی');
+        }
+
+        const result = parseExpression();
+        if (pos < tokens.length) throw new Error('بخش اضافی در عبارت ریاضی وجود دارد');
+        // Clean floating point noise (e.g. 0.1 + 0.2)
+        return Math.round((result + Number.EPSILON) * 1e6) / 1e6;
+      }
+
+      /**
+       * Extract a mathematical expression from a Persian spoken sentence.
+       * Handles colloquial phrasing like "۱۰ رو منهای ۳ کن" and reversed subtraction "۳ تا از ۱۰ کم کن".
+       */
+      function extractMathExpression(normalizedWithNums) {
+        let expr = normalizedWithNums;
+
+        // 1. Handle Persian reversed subtraction: "3 تا از 10 کم کن" => "10 - 3"
+        expr = expr.replace(
+          /(\d+(?:\.\d+)?)\s*(?:تا\s+)?(?:رو\s+)?از\s+(\d+(?:\.\d+)?)\s*(?:تا\s+)?کم(?:\s+کن)?/g,
+          '($2 - $1)'
+        );
+
+        // 2. Handle percentage phrasing: "10 درصد 200" or "10 درصد از 200" => "(10 / 100) * 200"
+        expr = expr.replace(
+          /(\d+(?:\.\d+)?)\s*درصد\s*(?:از\s+)?(\d+(?:\.\d+)?)/g,
+          '(($1 / 100) * $2)'
+        );
+
+        // 3. Map Persian math operator phrases to symbols
+        const replacements = [
+          [/به\s*اضافه|بعلاوه|به\s*علاوه|جمع\s*با|اضافه\s*کن\s*با|علاوه/g, ' + '],
+          [/منهای|منها|کم\s*کن\s*از|کسر/g, ' - '],
+          [/ضرب\s*در|ضربدر|در/g, ' * '],
+          [/تقسیم\s*بر|تقسیم/g, ' / '],
+          [/به\s*توان|توان/g, ' ^ '],
+          [/ممیز|اعشار|نقطه/g, '.'],
+          [/×/g, ' * '],
+          [/÷/g, ' / '],
+          [/−/g, ' - '],
+        ];
+
+        for (const [pattern, symbol] of replacements) {
+          expr = expr.replace(pattern, symbol);
+        }
+
+        // 4. Keep only valid math tokens (digits, decimal dot, operators, parentheses)
+        // First ensure there is at least one operator and two numbers (or a valid calculation)
+        const cleaned = expr.replace(/[^0-9.+\-*/^()\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+        // Check if cleaned expression actually contains an operator and at least one digit
+        if (!/\d/.test(cleaned) || !/[+\-*/^]/.test(cleaned)) {
+          return null;
+        }
+
+        return cleaned;
+      }
+
+      /* =====================================================================
+       * 4. PERSIAN VOICE COMMAND ROUTER (UNDO / SCOREBOARD / CALCULATOR)
+       * ===================================================================== */
+
+      /**
+       * Compute Levenshtein edit distance for gentle fuzzy matching of Persian player names.
+       */
+      function levenshtein(a, b) {
+        const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+        for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+        for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+        for (let i = 1; i <= a.length; i++) {
+          for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+          }
+        }
+        return dp[a.length][b.length];
+      }
+
+      /**
+       * Find a player mentioned in a clause using exact substring match first, then fuzzy token match.
+       */
+      function findPlayerInClause(clause) {
+        const players = state.activeGame.players;
+        // Exact inclusion check (longest name first)
+        const sortedByLen = [...players].sort((a, b) => b.name.length - a.name.length);
+        for (const p of sortedByLen) {
+          const normName = normalizePersianText(p.name);
+          if (normName && clause.includes(normName)) {
+            return p;
+          }
+        }
+
+        // Fuzzy token match (edit distance <= 1 for names with 3+ characters)
+        const words = clause.split(' ');
+        for (const p of sortedByLen) {
+          const normName = normalizePersianText(p.name);
+          if (normName.length < 3) continue;
+          for (const w of words) {
+            if (w.length >= 3 && levenshtein(w, normName) <= 1) {
+              return p;
+            }
+          }
+        }
+        return null;
+      }
+
+      /**
+       * Process any Persian voice or typed command and route it to the right engine.
+       */
+      function handleVoiceCommand(rawText) {
+        try {
+          const normalized = normalizePersianText(rawText);
+          if (!normalized) return;
+
+          const withNums = replacePersianNumberWords(normalized);
+
+          // 1) Check for Voice Undo Intent
+          if (/برگردون|برگردان|پشیمون|اشتباه\s*شد|قبلی\s*رو\s*پاک|آندو|undo/i.test(withNums)) {
+            const undone = undoLastRound();
+            if (undone) {
+              showInstantResult('آخرین تغییر امتیاز با فرمان صوتی بازگردانده شد.', 'amber');
+            } else {
+              showToast('هیچ راندی برای بازگشت وجود ندارد.', 'warning');
+            }
+            return;
+          }
+
+          // 2) Check for Add Player by Voice Intent (e.g., "بازیکن جدید مریم اضافه کن")
+          const addPlayerMatch = normalized.match(/بازیکن\s*(?:جدید\s+)?([^\s,]+)/);
+          if (addPlayerMatch && addPlayerMatch[1] && !['اضافه', 'حذف', 'کم'].includes(addPlayerMatch[1])) {
+            const newName = addPlayerMatch[1];
+            addPlayer(newName);
+            showInstantResult(`بازیکن «${newName}» به بازی اضافه شد.`, 'emerald');
+            return;
+          }
+
+          // 3) Check for Scoreboard Player Actions (supports multiple clauses separated by " و " or ",")
+          const clauses = withNums.split(/\s*,\s*|\s+و\s+/).map((c) => c.trim()).filter(Boolean);
+          const scoreActions = [];
+
+          for (const clause of clauses) {
+            const player = findPlayerInClause(clause);
+            if (!player) continue;
+
+            // Extract number from clause
+            const numMatch = clause.match(/(-?\d+(?:\.\d+)?)/);
+            if (!numMatch) continue;
+
+            const value = parseFloat(numMatch[1]);
+            let operation = 'ADD';
+
+            if (/کم\s*کن|کسر|منفی|منهای|جریمه|باخت|از\s+[^\s]+\s+\d+/.test(clause)) {
+              operation = 'SUBTRACT';
+            } else if (/بشه|بذار|تنظیم|مساوی|برابر\s*با/.test(clause)) {
+              operation = 'SET';
+            } else if (/برابر\s*کن|ضرب/.test(clause)) {
+              operation = 'MULTIPLY';
+            } else {
+              operation = 'ADD';
+            }
+
+            scoreActions.push({
+              player_id: player.id,
+              player_name: player.name,
+              operation,
+              value: Math.abs(value),
+            });
+          }
+
+          if (scoreActions.length > 0) {
+            applyScoreActions(rawText, scoreActions);
+            return;
+          }
+
+          // 4) Otherwise, attempt Voice Math Calculation (e.g. "۱۰ رو منهای ۳ کن")
+          const mathExpr = extractMathExpression(withNums);
+          if (mathExpr) {
+            const result = safeEvaluateMath(mathExpr);
+            recordCalculation(rawText, mathExpr, result);
+            return;
+          }
+
+          // 5) Fallback if nothing matched clearly
+          showToast('متوجه نام بازیکن یا عبارت ریاضی نشدم. لطفاً واضح‌تر تکرار کن.', 'warning');
+          showInstantResult(`متن شنیده‌شده: «${rawText}» — عملیات ریاضی یا نام بازیکن تشخیص داده نشد.`, 'amber');
+        } catch (err) {
+          console.error('Command processing error:', err);
+          showToast(err.message || 'خطا در پردازش فرمان صوتی', 'error');
+        }
+      }
+
+      /* =====================================================================
+       * 5. SCORE ENGINE & ROUND MANAGEMENT (DETERMINISTIC LOGIC)
+       * ===================================================================== */
+
+      /**
+       * Apply one or more player score operations atomically and log a new Round.
+       */
+      function applyScoreActions(rawText, actions) {
+        const applied = [];
+
+        for (const act of actions) {
+          const player = state.activeGame.players.find((p) => p.id === act.player_id);
+          if (!player) continue;
+
+          const prevScore = player.score;
+          let newScore = prevScore;
+
+          if (act.operation === 'ADD') newScore = prevScore + act.value;
+          else if (act.operation === 'SUBTRACT') newScore = prevScore - act.value;
+          else if (act.operation === 'SET') newScore = act.value;
+          else if (act.operation === 'MULTIPLY') newScore = prevScore * act.value;
+
+          // Round cleanly to avoid float drift
+          newScore = Math.round((newScore + Number.EPSILON) * 100) / 100;
+          player.score = newScore;
+
+          applied.push({
+            ...act,
+            prev_score: prevScore,
+            new_score: newScore,
+          });
+        }
+
+        if (applied.length === 0) return;
+
+        const roundEntry = {
+          id: 'r_' + Date.now(),
+          round_number: state.activeGame.rounds.length + 1,
+          raw_text: rawText,
+          actions: applied,
+          reverted: false,
+          created_at: new Date().toISOString(),
+        };
+
+        state.activeGame.rounds.unshift(roundEntry);
+        saveState();
+        renderAll();
+
+        // Build readable Persian feedback summary
+        const summaryParts = applied.map((a) => {
+          const opText =
+            a.operation === 'ADD'
+              ? `+${formatNum(a.value)}`
+              : a.operation === 'SUBTRACT'
+              ? `-${formatNum(a.value)}`
+              : a.operation === 'MULTIPLY'
+              ? `×${formatNum(a.value)}`
+              : `= ${formatNum(a.value)}`;
+          return `${a.player_name} (${opText} ← مجموع ${formatNum(a.new_score)})`;
+        });
+
+        showInstantResult(`ثبت شد: ${summaryParts.join(' | ')}`, 'emerald', true);
+
+        // Check target score winner notification
+        const target = Number(state.activeGame.target_score);
+        if (target > 0) {
+          const reached = applied.find((a) => a.new_score >= target);
+          if (reached) {
+            showToast(`🎉 ${reached.player_name} به سقف امتیاز (${formatNum(target)}) رسید!`, 'success');
+          }
+        }
+      }
+
+      /**
+       * Revert the most recent non-reverted round (soft-delete flag for audit trail).
+       */
+      function undoLastRound() {
+        const lastActive = state.activeGame.rounds.find((r) => !r.reverted);
+        if (!lastActive) return false;
+
+        // Restore each player's previous score
+        for (const act of [...lastActive.actions].reverse()) {
+          const player = state.activeGame.players.find((p) => p.id === act.player_id);
+          if (!player) continue;
+          if (typeof act.prev_score === 'number') {
+            player.score = act.prev_score;
+          } else if (act.operation === 'ADD') {
+            player.score -= act.value;
+          } else if (act.operation === 'SUBTRACT') {
+            player.score += act.value;
+          }
+        }
+
+        lastActive.reverted = true;
+        saveState();
+        renderAll();
+        showToast('آخرین راند با موفقیت بازگردانده شد.', 'info');
+        return true;
+      }
+
+      /**
+       * Add a new player to the active game.
+       */
+      function addPlayer(name) {
+        const cleanName = normalizePersianText(name);
+        if (!cleanName) {
+          showToast('لطفاً نام بازیکن را وارد کن.', 'warning');
+          return;
+        }
+        const exists = state.activeGame.players.some(
+          (p) => normalizePersianText(p.name) === cleanName
+        );
+        if (exists) {
+          showToast(`بازیکن «${cleanName}» از قبل در بازی وجود دارد.`, 'warning');
+          return;
+        }
+
+        state.activeGame.players.push({
+          id: 'p_' + Date.now() + '_' + Math.floor(Math.random() * 100),
+          name: cleanName,
+          score: 0,
+        });
+        saveState();
+        renderAll();
+        showToast(`بازیکن «${cleanName}» اضافه شد.`, 'success');
+      }
+
+      /**
+       * Remove a player from the active game.
+       */
+      function removePlayer(playerId) {
+        const target = state.activeGame.players.find((p) => p.id === playerId);
+        if (!target) return;
+        openConfirmModal(
+          'حذف بازیکن',
+          `آیا مطمئنی می‌خواهی «${target.name}» را از بازی فعلی حذف کنی؟`,
+          () => {
+            state.activeGame.players = state.activeGame.players.filter((p) => p.id !== playerId);
+            saveState();
+            renderAll();
+            showToast(`بازیکن «${target.name}» حذف شد.`, 'info');
+          }
+        );
+      }
+
+      /**
+       * Save the current game into the archivedGames list and prepare a fresh game.
+       */
+      function finishCurrentGame() {
+        const players = state.activeGame.players;
+        if (players.length === 0) {
+          showToast('برای ثبت بازی حداقل باید یک بازیکن وجود داشته باشد.', 'warning');
+          return;
+        }
+
+        const maxScore = Math.max(...players.map((p) => p.score));
+        const winners = players.filter((p) => p.score === maxScore).map((p) => p.name);
+        const scoresMap = {};
+        players.forEach((p) => {
+          scoresMap[p.name] = p.score;
+        });
+
+        const gameName = state.activeGame.game_name.trim() || 'بازی بدون عنوان';
+        const location = state.activeGame.location.trim() || 'ثبت نشده';
+
+        const archived = {
+          id: state.activeGame.id,
+          game_name: gameName,
+          location: location,
+          status: 'completed',
+          created_at: state.activeGame.created_at,
+          ended_at: new Date().toISOString(),
+          scores: scoresMap,
+          winner_names: winners,
+          rounds_count: state.activeGame.rounds.filter((r) => !r.reverted).length,
+          summary_text: `بازی ${gameName} در ${location} برگزار شد. برنده: ${winners.join(' و ')} با ${formatNum(maxScore)} امتیاز.`,
+        };
+
+        state.archivedGames.unshift(archived);
+
+        // Reset active game scores for next match while keeping the same players
+        state.activeGame = {
+          id: 'game_' + Date.now(),
+          game_name: gameName,
+          location: location,
+          target_score: state.activeGame.target_score || '',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          players: players.map((p) => ({ ...p, score: 0 })),
+          rounds: [],
+        };
+
+        saveState();
+        renderAll();
+        showToast(`بازی «${gameName}» با برنده شدن ${winners.join(' و ')} در سوابق ثبت شد!`, 'success');
+        switchTab('history');
+      }
+
+      /* =====================================================================
+       * 6. VOICE CALCULATOR RECORDING & QUICK ASSIGN TO PLAYER
+       * ===================================================================== */
+
+      function recordCalculation(rawText, expression, result) {
+        const entry = {
+          id: 'c_' + Date.now(),
+          raw_text: rawText,
+          expression,
+          result,
+          created_at: new Date().toISOString(),
+        };
+
+        state.calcHistory.unshift(entry);
+        if (state.calcHistory.length > 50) state.calcHistory.pop();
+        saveState();
+        renderCalculator();
+
+        // Update instant banner with quick option to assign this calculated result to a player
+        const formattedFormula = `${expression} = ${formatNum(result)}`;
+        showInstantResult(
+          `نتیجه محاسبه: ${formattedFormula}`,
+          'emerald',
+          false,
+          result
+        );
+      }
+
+      /* =====================================================================
+       * 7. LOCAL HYBRID QUERY ENGINE (SIMULATING RAG OVER HISTORY)
+       * ===================================================================== */
+
+      function computePlayerStats() {
+        const stats = {};
+        for (const game of state.archivedGames) {
+          const scores = game.scores || {};
+          for (const [name, score] of Object.entries(scores)) {
+            if (!stats[name]) {
+              stats[name] = {
+                name,
+                total_games: 0,
+                total_wins: 0,
+                highest_score: -Infinity,
+                total_score: 0,
+              };
+            }
+            stats[name].total_games += 1;
+            stats[name].total_score += Number(score) || 0;
+            if (Number(score) > stats[name].highest_score) {
+              stats[name].highest_score = Number(score);
+            }
+            if ((game.winner_names || []).includes(name)) {
+              stats[name].total_wins += 1;
+            }
+          }
+        }
+        return Object.values(stats).map((s) => ({
+          ...s,
+          win_rate: s.total_games > 0 ? Math.round((s.total_wins / s.total_games) * 100) : 0,
+          avg_score: s.total_games > 0 ? Math.round((s.total_score / s.total_games) * 10) / 10 : 0,
+        }));
+      }
+
+      /**
+       * Answer natural Persian questions over archived games & player metadata.
+       */
+      function answerHistoryQuery(questionRaw) {
+        const q = normalizePersianText(questionRaw);
+        const answerBox = document.getElementById('historyQueryAnswer');
+        if (!q) return;
+
+        const games = state.archivedGames;
+        const stats = computePlayerStats();
+
+        if (games.length === 0) {
+          answerBox.textContent = 'هنوز هیچ بازی پایان‌یافته‌ای در سوابق ثبت نشده است. ابتدا یک بازی را ثبت پایان کنید.';
+          answerBox.classList.remove('hidden');
+          return;
+        }
+
+        let answer = '';
+
+        // 1. Most wins question
+        if (/بیشتر.*برد|قهرمان|بهترین|بیشترین\s*برد/.test(q)) {
+          const sorted = [...stats].sort((a, b) => b.total_wins - a.total_wins || b.win_rate - a.win_rate);
+          const top = sorted[0];
+          answer = `تا این لحظه «${top.name}» با ${formatNum(top.total_wins)} برد از ${formatNum(top.total_games)} بازی (نرخ برد ${formatNum(top.win_rate)}٪) پیشتاز است.`;
+        }
+        // 2. Last game question
+        else if (/آخرین\s*بازی|بازی\s*قبلی|اخیر/.test(q)) {
+          const last = games[0];
+          const scoreLine = Object.entries(last.scores)
+            .map(([n, sc]) => `${n}: ${formatNum(sc)}`)
+            .join('، ');
+          answer = `آخرین بازی ثبت‌شده «${last.game_name}» در «${last.location}» بود (${formatDateFa(last.ended_at)}). برنده: ${last.winner_names.join(' و ')} | امتیازها: ${scoreLine}.`;
+        }
+        // 3. Highest score record question
+        else if (/رکورد|بیشترین\s*امتیاز|بالاترین/.test(q)) {
+          const sorted = [...stats].sort((a, b) => b.highest_score - a.highest_score);
+          const best = sorted[0];
+          answer = `بالاترین رکورد امتیاز ثبت‌شده متعلق به «${best.name}» با ${formatNum(best.highest_score)} امتیاز است.`;
+        }
+        // 4. Specific player stats question
+        else {
+          const matchedPlayer = stats.find((s) => q.includes(normalizePersianText(s.name)));
+          if (matchedPlayer) {
+            answer = `آمار «${matchedPlayer.name}»: تعداد بازی‌ها ${formatNum(matchedPlayer.total_games)}، تعداد برد ${formatNum(matchedPlayer.total_wins)} (نرخ برد ${formatNum(matchedPlayer.win_rate)}٪)، میانگین امتیاز ${formatNum(matchedPlayer.avg_score)} و بالاترین رکورد ${formatNum(matchedPlayer.highest_score)}.`;
+          } else {
+            // 5. Fallback keyword search across game names & summaries
+            const matchedGames = games.filter((g) => {
+              const haystack = normalizePersianText(`${g.game_name} ${g.location} ${g.summary_text}`);
+              return q.split(' ').some((w) => w.length >= 2 && haystack.includes(w));
+            });
+            if (matchedGames.length > 0) {
+              answer = `تعداد ${formatNum(matchedGames.length)} بازی مرتبط پیدا شد. جدیدترین مورد: ${matchedGames[0].summary_text}`;
+            } else {
+              answer = `در کل ${formatNum(games.length)} بازی ثبت شده است، اما مورد دقیقی مطابق با «${questionRaw}» پیدا نشد. نام یک بازیکن یا بازی را در سوال بیاورید.`;
+            }
+          }
+        }
+
+        answerBox.textContent = answer;
+        answerBox.classList.remove('hidden');
+      }
+
+      /* =====================================================================
+       * 8. WEB SPEECH API INTEGRATION (fa-IR)
+       * ===================================================================== */
+      function initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const badge = document.getElementById('speechSupportBadge');
+        const unsupportedAlert = document.getElementById('unsupportedAlert');
+        const micBtn = document.getElementById('micToggleBtn');
+        const micStatus = document.getElementById('micStatusText');
+
+        if (!SpeechRecognition) {
+          unsupportedAlert.classList.remove('hidden');
+          if (badge) {
+            badge.className = 'hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200';
+            badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span>میکروفون پشتیبانی نمی‌شود';
+          }
+          micBtn.classList.add('opacity-60');
+          micStatus.textContent = 'فقط در Chrome / Edge';
+          return;
+        }
+
+        try {
+          recognition = new SpeechRecognition();
+          recognition.lang = 'fa-IR';
+          recognition.interimResults = true;
+          recognition.maxAlternatives = 1;
+
+          recognition.onstart = () => {
+            isListening = true;
+            updateMicUI(true);
+            document.getElementById('liveTranscript').textContent = 'در حال گوش دادن... صحبت کن';
+          };
+
+          recognition.onresult = (event) => {
+            let interimText = '';
+            let finalText = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const transcript = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                finalText += transcript;
+              } else {
+                interimText += transcript;
+              }
+            }
+
+            const transcriptEl = document.getElementById('liveTranscript');
+            if (interimText) {
+              transcriptEl.textContent = interimText;
+            }
+            if (finalText.trim()) {
+              transcriptEl.textContent = finalText.trim();
+              handleVoiceCommand(finalText.trim());
+            }
+          };
+
+          recognition.onerror = (event) => {
+            console.warn('Web Speech API error:', event.error);
+            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+              showToast('دسترسی به میکروفون رد شد. لطفاً اجازه میکروفون را در مرورگر فعال کن.', 'error');
+            } else if (event.error === 'no-speech') {
+              showToast('صدایی شنیده نشد. دوباره تلاش کن.', 'warning');
+            } else if (event.error === 'network') {
+              showToast('خطای شبکه در اتصال به سرویس تشخیص گفتار گوگل.', 'error');
+            } else if (event.error !== 'aborted') {
+              showToast(`خطای تشخیص گفتار: ${event.error}`, 'error');
+            }
+            isListening = false;
+            updateMicUI(false);
+          };
+
+          recognition.onend = () => {
+            const continuousMode = document.getElementById('continuousToggle').checked;
+            if (isListening && continuousMode) {
+              try {
+                recognition.start();
+              } catch (e) {
+                isListening = false;
+                updateMicUI(false);
+              }
+            } else {
+              isListening = false;
+              updateMicUI(false);
+            }
+          };
+        } catch (err) {
+          console.error('SpeechRecognition init failed:', err);
+          unsupportedAlert.classList.remove('hidden');
+        }
+      }
+
+      function toggleMicrophone() {
+        if (!recognition) {
+          showToast('مرورگر شما از Web Speech API پشتیبانی نمی‌کند. از Chrome استفاده کن یا فرمان را تایپ کن.', 'warning');
+          return;
+        }
+
+        try {
+          if (isListening) {
+            isListening = false;
+            recognition.stop();
+            updateMicUI(false);
+          } else {
+            recognition.continuous = document.getElementById('continuousToggle').checked;
+            recognition.start();
+          }
+        } catch (err) {
+          console.error('Mic toggle error:', err);
+          isListening = false;
+          updateMicUI(false);
+          showToast('امکان شروع میکروفون نبود. صفحه را بررسی کن و دوباره بزن.', 'error');
+        }
+      }
+
+      function updateMicUI(active) {
+        const micBtn = document.getElementById('micToggleBtn');
+        const pulse = document.getElementById('micPulseRing');
+        const status = document.getElementById('micStatusText');
+
+        if (active) {
+          pulse.classList.remove('hidden');
+          micBtn.classList.remove('from-indigo-500', 'to-violet-500');
+          micBtn.classList.add('from-rose-500', 'to-red-600');
+          status.textContent = 'در حال شنیدن... (برای توقف بزن)';
+          status.classList.add('text-rose-300');
+        } else {
+          pulse.classList.add('hidden');
+          micBtn.classList.add('from-indigo-500', 'to-violet-500');
+          micBtn.classList.remove('from-rose-500', 'to-red-600');
+          status.textContent = 'برای صحبت کلیک کن';
+          status.classList.remove('text-rose-300');
+        }
+      }
+
+      /* =====================================================================
+       * 9. RENDERING & UI HELPERS
+       * ===================================================================== */
+
+      function formatNum(num) {
+        if (num === null || num === undefined || Number.isNaN(Number(num))) return '۰';
+        return new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 4 }).format(Number(num));
+      }
+
+      function formatDateFa(isoStr) {
+        try {
+          return new Intl.DateTimeFormat('fa-IR', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }).format(new Date(isoStr));
+        } catch {
+          return '';
+        }
+      }
+
+      function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+
+        const styles = {
+          success: 'bg-emerald-600 text-white',
+          error: 'bg-rose-600 text-white',
+          warning: 'bg-amber-500 text-white',
+          info: 'bg-slate-800 text-white',
+        };
+
+        toast.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-lg text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 transition ${styles[type] || styles.info}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toast.remove(), 250);
+        }, 3600);
+      }
+
+      function showInstantResult(text, tone = 'emerald', showUndo = false, assignableCalcValue = null) {
+        const box = document.getElementById('instantResultBox');
+        const textEl = document.getElementById('instantResultText');
+        const actionsEl = document.getElementById('instantResultActions');
+        const undoBtn = document.getElementById('voiceUndoQuickBtn');
+
+        box.className =
+          tone === 'amber'
+            ? 'rounded-2xl bg-amber-500/15 border border-amber-400/30 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2'
+            : 'rounded-2xl bg-emerald-500/15 border border-emerald-400/30 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2';
+
+        textEl.textContent = text;
+        actionsEl.innerHTML = '';
+
+        if (showUndo) {
+          undoBtn.classList.remove('hidden');
+        }
+
+        // If this was a math calculation, offer quick 1-click chips to add result to any player
+        if (typeof assignableCalcValue === 'number' && state.activeGame.players.length > 0) {
+          const label = document.createElement('span');
+          label.className = 'text-[11px] text-emerald-200';
+          label.textContent = 'افزودن به امتیاز:';
+          actionsEl.appendChild(label);
+
+          state.activeGame.players.slice(0, 4).forEach((player) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'px-2.5 py-1 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/50 text-white text-[11px] font-bold transition';
+            btn.textContent = `+ ${player.name}`;
+            btn.addEventListener('click', () => {
+              applyScoreActions(`انتقال نتیجه ماشین‌حساب (${assignableCalcValue}) به ${player.name}`, [
+                {
+                  player_id: player.id,
+                  player_name: player.name,
+                  operation: assignableCalcValue >= 0 ? 'ADD' : 'SUBTRACT',
+                  value: Math.abs(assignableCalcValue),
+                },
+              ]);
+            });
+            actionsEl.appendChild(btn);
+          });
+        }
+      }
+
+      function renderScoreboard() {
+        document.getElementById('gameNameInput').value = state.activeGame.game_name || '';
+        document.getElementById('gameLocationInput').value = state.activeGame.location || '';
+        document.getElementById('targetScoreInput').value = state.activeGame.target_score || '';
+
+        const container = document.getElementById('playersContainer');
+        const sortedPlayers = [...state.activeGame.players].sort((a, b) => b.score - a.score);
+        const topScore = sortedPlayers.length > 0 ? sortedPlayers[0].score : null;
+
+        if (sortedPlayers.length === 0) {
+          container.innerHTML = `
+            <div class="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+              هنوز بازیکنی اضافه نشده است. از کادر بالا نام بازیکنان را اضافه کن یا بگو «بازیکن جدید سارا اضافه کن».
+            </div>`;
+        } else {
+          container.innerHTML = sortedPlayers
+            .map((p, idx) => {
+              const isLeader = p.score === topScore && p.score > 0;
+              const target = Number(state.activeGame.target_score);
+              const progressPct = target > 0 ? Math.max(0, Math.min(100, Math.round((p.score / target) * 100))) : 0;
+
+              return `
+                <div class="rounded-2xl bg-white border ${isLeader ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-slate-200'} p-4 shadow-sm flex flex-col justify-between gap-3 transition">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div class="w-9 h-9 rounded-xl ${isLeader ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'} font-extrabold text-sm flex items-center justify-center shrink-0">
+                        ${formatNum(idx + 1)}
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                          <h3 class="font-bold text-slate-900 truncate">${escapeHtml(p.name)}</h3>
+                          ${isLeader ? '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">پیشتاز</span>' : ''}
+                        </div>
+                        <p class="text-[11px] text-slate-400">بگو: «۱۰ امتیاز به ${escapeHtml(p.name)} بده»</p>
+                      </div>
+                    </div>
+                    <button data-remove-player="${p.id}" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="حذف بازیکن">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="flex items-end justify-between gap-3">
+                    <div>
+                      <span class="text-[11px] text-slate-400 block">امتیاز فعلی</span>
+                      <span class="text-3xl font-extrabold text-slate-900">${formatNum(p.score)}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button data-quick-delta="-5" data-player-id="${p.id}" type="button" class="px-2.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition">-۵</button>
+                      <button data-quick-delta="5" data-player-id="${p.id}" type="button" class="px-2.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition">+۵</button>
+                      <button data-quick-delta="10" data-player-id="${p.id}" type="button" class="px-2.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition">+۱۰</button>
+                    </div>
+                  </div>
+
+                  ${
+                    target > 0
+                      ? `<div class="space-y-1">
+                          <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>پیشرفت تا هدف (${formatNum(target)})</span>
+                            <span>${formatNum(progressPct)}٪</span>
+                          </div>
+                          <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-indigo-500 rounded-full transition-all" style="width: ${progressPct}%"></div>
+                          </div>
+                        </div>`
+                      : ''
+                  }
+                </div>
+              `;
+            })
+            .join('');
+        }
+
+        // Render Rounds Log
+        const roundsEl = document.getElementById('roundsLogContainer');
+        if (state.activeGame.rounds.length === 0) {
+          roundsEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">هنوز راندی ثبت نشده است.</p>`;
+        } else {
+          roundsEl.innerHTML = state.activeGame.rounds
+            .map((r) => {
+              const actionsText = r.actions
+                .map((a) => {
+                  const sign = a.operation === 'SUBTRACT' ? '-' : a.operation === 'SET' ? '=' : a.operation === 'MULTIPLY' ? '×' : '+';
+                  return `${escapeHtml(a.player_name)} ${sign}${formatNum(a.value)}`;
+                })
+                .join(' ، ');
+              return `
+                <div class="py-2.5 px-1 ${r.reverted ? 'opacity-45 line-through' : ''}">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-slate-800">${actionsText}</span>
+                    <span class="text-[10px] text-slate-400 shrink-0">${formatDateFa(r.created_at)}</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-0.5 truncate">«${escapeHtml(r.raw_text)}»</p>
+                </div>
+              `;
+            })
+            .join('');
+        }
+      }
+
+      function renderCalculator() {
+        const listEl = document.getElementById('calcHistoryList');
+        const latest = state.calcHistory[0];
+
+        if (latest) {
+          document.getElementById('calcSpokenText').textContent = latest.raw_text;
+          document.getElementById('calcFormulaDisplay').textContent = latest.expression;
+          document.getElementById('calcResultDisplay').textContent = formatNum(latest.result);
+        } else {
+          document.getElementById('calcSpokenText').textContent = 'هنوز محاسبه‌ای انجام نشده است.';
+          document.getElementById('calcFormulaDisplay').textContent = '0';
+          document.getElementById('calcResultDisplay').textContent = '0';
+        }
+
+        if (state.calcHistory.length === 0) {
+          listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-10">تاریخچه محاسبات خالی است. روی میکروفون بزن و بگو «۱۰ رو منهای ۳ کن».</p>`;
+        } else {
+          listEl.innerHTML = state.calcHistory
+            .map(
+              (item) => `
+              <div class="py-3 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-slate-800 truncate">«${escapeHtml(item.raw_text)}»</p>
+                  <p class="text-xs font-mono text-slate-400 mt-0.5" dir="ltr">${escapeHtml(item.expression)} • ${formatDateFa(item.created_at)}</p>
+                </div>
+                <div class="px-3.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 font-extrabold text-base shrink-0">
+                  ${formatNum(item.result)}
+                </div>
+              </div>`
+            )
+            .join('');
+        }
+      }
+
+      function renderHistory() {
+        // 1. Player Stats Cards
+        const stats = computePlayerStats().sort((a, b) => b.total_wins - a.total_wins);
+        const statsEl = document.getElementById('playerStatsContainer');
+
+        if (stats.length === 0) {
+          statsEl.innerHTML = `<p class="text-xs text-slate-400 sm:col-span-2 lg:col-span-3 py-4 text-center">با ثبت اولین بازی پایان‌یافته، پروفایل آماری بازیکنان اینجا ساخته می‌شود.</p>`;
+        } else {
+          statsEl.innerHTML = stats
+            .map(
+              (s) => `
+              <div class="rounded-2xl bg-slate-50 border border-slate-200/80 p-4 space-y-2">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-bold text-slate-900">${escapeHtml(s.name)}</h4>
+                  <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">نرخ برد ${formatNum(s.win_rate)}٪</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center pt-1">
+                  <div class="rounded-xl bg-white p-2 border border-slate-100">
+                    <span class="block text-[10px] text-slate-400">بازی‌ها</span>
+                    <span class="text-sm font-extrabold text-slate-800">${formatNum(s.total_games)}</span>
+                  </div>
+                  <div class="rounded-xl bg-white p-2 border border-slate-100">
+                    <span class="block text-[10px] text-slate-400">بردها</span>
+                    <span class="text-sm font-extrabold text-indigo-600">${formatNum(s.total_wins)}</span>
+                  </div>
+                  <div class="rounded-xl bg-white p-2 border border-slate-100">
+                    <span class="block text-[10px] text-slate-400">رکورد</span>
+                    <span class="text-sm font-extrabold text-amber-600">${formatNum(s.highest_score)}</span>
+                  </div>
+                </div>
+              </div>`
+            )
+            .join('');
+        }
+
+        // 2. Archived Games List (with live filter)
+        const filterVal = normalizePersianText(document.getElementById('archiveFilterInput').value);
+        const archiveEl = document.getElementById('gamesArchiveContainer');
+
+        const filteredGames = state.archivedGames.filter((g) => {
+          if (!filterVal) return true;
+          const text = normalizePersianText(
+            `${g.game_name} ${g.location} ${(g.winner_names || []).join(' ')} ${Object.keys(g.scores || {}).join(' ')}`
+          );
+          return text.includes(filterVal);
+        });
+
+        if (filteredGames.length === 0) {
+          archiveEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">بازی مطابق با جستجو پیدا نشد.</p>`;
+        } else {
+          archiveEl.innerHTML = filteredGames
+            .map((g) => {
+              const badges = Object.entries(g.scores || {})
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, sc]) => {
+                  const isWin = (g.winner_names || []).includes(name);
+                  return `<span class="px-2.5 py-1 rounded-lg text-xs font-semibold ${isWin ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700'}">${escapeHtml(name)}: ${formatNum(sc)}</span>`;
+                })
+                .join('');
+
+              return `
+                <div class="rounded-2xl border border-slate-200 p-4 hover:border-indigo-200 transition space-y-2.5">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-900">${escapeHtml(g.game_name)}</h4>
+                      <p class="text-xs text-slate-500">${escapeHtml(g.location)} • ${formatDateFa(g.ended_at)}</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+                      برنده: ${escapeHtml((g.winner_names || []).join(' و '))}
+                    </span>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">${badges}</div>
+                </div>`;
+            })
+            .join('');
+        }
+      }
+
+      function renderAll() {
+        renderScoreboard();
+        renderCalculator();
+        renderHistory();
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      /* =====================================================================
+       * 10. MODALS, TABS & CLIPBOARD (USING execCommand FOR IFRAME SAFETY)
+       * ===================================================================== */
+
+      function switchTab(tabName) {
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+          panel.classList.toggle('hidden', panel.id !== `tab-${tabName}`);
+        });
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+          const isActive = btn.dataset.tab === tabName;
+          btn.className = isActive
+            ? 'tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition bg-white text-indigo-700 shadow-sm'
+            : 'tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-600 hover:text-slate-900';
+        });
+      }
+
+      function openConfirmModal(title, message, onConfirm) {
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalMessage').textContent = message;
+        pendingConfirmCallback = onConfirm;
+        document.getElementById('confirmModal').classList.remove('hidden');
+      }
+
+      function closeConfirmModal() {
+        pendingConfirmCallback = null;
+        document.getElementById('confirmModal').classList.add('hidden');
+      }
+
+      function buildFirestorePayload() {
+        return {
+          players: computePlayerStats(),
+          active_game: state.activeGame,
+          games_archive: state.archivedGames,
+          voice_calculations: state.calcHistory,
+        };
+      }
+
+      function copyTextSafe(text) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast('ساختار JSON با موفقیت کپی شد!', 'success');
+        } catch (err) {
+          console.error('Copy failed:', err);
+          showToast('کپی کردن با خطا مواجه شد.', 'error');
+        }
+      }
+
+      /* =====================================================================
+       * 11. EVENT LISTENERS & INITIALIZATION
+       * ===================================================================== */
+      function bindEvents() {
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+          btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        // Microphone button
+        document.getElementById('micToggleBtn').addEventListener('click', toggleMicrophone);
+
+        // Manual command submission
+        document.getElementById('manualCommandForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const input = document.getElementById('manualCommandInput');
+          const val = input.value.trim();
+          if (!val) return;
+          document.getElementById('liveTranscript').textContent = val;
+          handleVoiceCommand(val);
+          input.value = '';
+        });
+
+        // Demo voice command chips
+        document.querySelectorAll('.demo-chip').forEach((chip) => {
+          chip.addEventListener('click', () => {
+            const cmd = chip.textContent.trim();
+            document.getElementById('liveTranscript').textContent = cmd;
+            handleVoiceCommand(cmd);
+          });
+        });
+
+        // Quick Undo buttons
+        document.getElementById('undoRoundBtn').addEventListener('click', () => {
+          if (!undoLastRound()) showToast('راندی برای بازگشت وجود ندارد.', 'warning');
+        });
+        document.getElementById('voiceUndoQuickBtn').addEventListener('click', () => {
+          undoLastRound();
+        });
+
+        // Game metadata live updates
+        document.getElementById('gameNameInput').addEventListener('input', (e) => {
+          state.activeGame.game_name = e.target.value;
+          saveState();
+        });
+        document.getElementById('gameLocationInput').addEventListener('input', (e) => {
+          state.activeGame.location = e.target.value;
+          saveState();
+        });
+        document.getElementById('targetScoreInput').addEventListener('input', (e) => {
+          state.activeGame.target_score = e.target.value ? Number(e.target.value) : '';
+          saveState();
+          renderScoreboard();
+        });
+
+        // Add player form
+        document.getElementById('addPlayerForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const input = document.getElementById('newPlayerNameInput');
+          addPlayer(input.value);
+          input.value = '';
+        });
+
+        // Delegated clicks on player cards (+5, +10, -5, remove)
+        document.getElementById('playersContainer').addEventListener('click', (e) => {
+          const removeBtn = e.target.closest('[data-remove-player]');
+          if (removeBtn) {
+            removePlayer(removeBtn.dataset.removePlayer);
+            return;
+          }
+
+          const deltaBtn = e.target.closest('[data-quick-delta]');
+          if (deltaBtn) {
+            const playerId = deltaBtn.dataset.playerId;
+            const delta = Number(deltaBtn.dataset.quickDelta);
+            const player = state.activeGame.players.find((p) => p.id === playerId);
+            if (!player) return;
+            applyScoreActions(`تغییر دستی امتیاز ${player.name} (${delta > 0 ? '+' : ''}${delta})`, [
+              {
+                player_id: player.id,
+                player_name: player.name,
+                operation: delta >= 0 ? 'ADD' : 'SUBTRACT',
+                value: Math.abs(delta),
+              },
+            ]);
+          }
+        });
+
+        // Finish game & Reset scores
+        document.getElementById('finishGameBtn').addEventListener('click', () => {
+          openConfirmModal(
+            'ثبت پایان بازی',
+            'نتیجه بازی فعلی در آرشیو ذخیره و پروفایل بازیکنان به‌روزرسانی شود؟',
+            finishCurrentGame
+          );
+        });
+
+        document.getElementById('resetScoresBtn').addEventListener('click', () => {
+          openConfirmModal(
+            'صفر کردن امتیازها',
+            'امتیاز همه بازیکنان بازی فعلی صفر و لاگ راندها پاک شود؟',
+            () => {
+              state.activeGame.players.forEach((p) => (p.score = 0));
+              state.activeGame.rounds = [];
+              saveState();
+              renderAll();
+              showToast('امتیازهای بازی فعلی صفر شد.', 'info');
+            }
+          );
+        });
+
+        // Clear calculator history
+        document.getElementById('clearCalcHistoryBtn').addEventListener('click', () => {
+          openConfirmModal(
+            'پاک کردن تاریخچه محاسبات',
+            'تمام تاریخچه محاسبات صوتی پاک شود؟',
+            () => {
+              state.calcHistory = [];
+              saveState();
+              renderCalculator();
+              showToast('تاریخچه محاسبات پاک شد.', 'info');
+            }
+          );
+        });
+
+        // History RAG-like query & archive filter
+        document.getElementById('historyQueryForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          answerHistoryQuery(document.getElementById('historyQueryInput').value);
+        });
+        document.querySelectorAll('.rag-chip').forEach((chip) => {
+          chip.addEventListener('click', () => {
+            const q = chip.textContent.trim();
+            document.getElementById('historyQueryInput').value = q;
+            answerHistoryQuery(q);
+          });
+        });
+        document.getElementById('archiveFilterInput').addEventListener('input', renderHistory);
+
+        // Firestore JSON export modal
+        document.getElementById('openSchemaModalBtn').addEventListener('click', () => {
+          const jsonStr = JSON.stringify(buildFirestorePayload(), null, 2);
+          document.getElementById('firestoreJsonPreview').textContent = jsonStr;
+          document.getElementById('schemaModal').classList.remove('hidden');
+        });
+        const closeSchema = () => document.getElementById('schemaModal').classList.add('hidden');
+        document.getElementById('closeSchemaModalBtn').addEventListener('click', closeSchema);
+        document.getElementById('closeSchemaModalBtn2').addEventListener('click', closeSchema);
+        document.getElementById('copyFirestoreJsonBtn').addEventListener('click', () => {
+          copyTextSafe(document.getElementById('firestoreJsonPreview').textContent);
+        });
+
+        // Confirm modal buttons
+        document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirmModal);
+        document.getElementById('confirmOkBtn').addEventListener('click', () => {
+          const cb = pendingConfirmCallback;
+          closeConfirmModal();
+          if (typeof cb === 'function') cb();
+        });
+      }
+
+      // Bootstrap application on DOM ready
+      document.addEventListener('DOMContentLoaded', () => {
+        bindEvents();
+        initSpeechRecognition();
+        renderAll();
+      });
+    })();
+  </script>
+</body>
+</html>
