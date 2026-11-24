@@ -3,13 +3,14 @@
  * ---------------------------------------------------------------------
  * Features:
  *  - Auto-initializes & migrates D1 schema (games, voice_logs) safely on cold start
- *  - Full Game Lifecycle: Start -> Extract Players -> Edit Players -> Live Utterances -> Undo -> End
+ *  - Full Game Lifecycle: Start -> Extract Players -> Mid-Game Player Edit -> Live Utterances -> Undo -> End
  *  - 3-Tier Waterfall Engine:
- *      Layer 1: Fast Persian Regex (0 tokens, <2ms) + Voice Undo
+ *      Layer 1: Strict Persian Regex (0 tokens, <2ms, single-clause safe) + Voice Undo
  *      Layer 2: External Cloud API (Auto-discovered active Gemini / Groq / GitHub Models)
- *      Layer 3: Cloudflare Workers AI Fallback (Auto-selected active Cloudflare GPU models)
- *  - Diagnostic endpoint (/api/debug-ai) to verify Layer 2 & Layer 3 live
- *  - Archive & History endpoints, Aggregated Player Career Stats & Grounded Persian Q&A
+ *      Layer 3: Cloudflare Workers AI Fallback (Auto-selected active GPU models, max_tokens: 800)
+ *  - Multi-sentence & multi-command support (score actions + player changes in one turn)
+ *  - Atomic History Reset (DELETE /api/games?confirm=true) + Single Game Delete
+ *  - Diagnostic endpoint (/api/debug-ai), Career Stats & Grounded Persian Q&A
  */
 
 const corsHeaders = {
@@ -176,10 +177,12 @@ function extractJsonObject(rawText) {
 }
 
 /* =========================================================================
- * 3. LAYER 1: FAST PERSIAN REGEX ENGINE (0 TOKENS, INSTANT)
+ * 3. LAYER 1: STRICT PERSIAN REGEX ENGINE (0 TOKENS, NO PARTIAL SWALLOWING)
  * ========================================================================= */
 function isUndoIntent(rawText) {
   const norm = normalizePersian(rawText);
+  // Only trigger fast undo if the utterance is short and purely an undo command
+  if (norm.split(" ").length > 7) return false;
   return /قبلی\s*رو\s*برگردون|برگردون\s*عقب|قبلی\s*اشتباه\s*شد|آندو|پشیمون\s*شدم|\bundo\b/i.test(norm);
 }
 
@@ -188,9 +191,14 @@ function tryParseWithRegex(rawText, players) {
 
   const norm = replaceSpokenNumbers(normalizePersian(rawText));
 
-  // Escalate complex, relational, or player-editing utterances to AI (Layer 2 / Layer 3)
+  // Long or multi-sentence speech goes straight to AI so nothing is missed
+  if (norm.split(" ").length > 12) {
+    return null;
+  }
+
+  // Complex math, relational commands, or player-management commands go to AI
   const complexIndicators =
-    /نصف|دو\s*برابر|سه\s*برابر|انتقال|جابجا|جابه\s*جا|تقسیم|ضرب|درصد|اگر|شرط|بده\s*به|همه\s*بجز|بقیه|جای\s*هم|تغییر\s*بده|عوض\s*کن|حذف\s*کن|اسم\s*.*\s*بذار|بازیکن\s*جدید/;
+    /نصف|دو\s*برابر|سه\s*برابر|انتقال|جابجا|جابه\s*جا|تقسیم|ضرب|درصد|اگر|شرط|بده\s*به|همه|بقیه|جای\s*هم|تغییر|عوض|حذف|اضافه\s*بکنی|بازیکن|اسم|بعدش|سپس|دوباره|هر\s*کدوم|هرکدوم/;
   if (complexIndicators.test(norm)) {
     return null;
   }
@@ -200,18 +208,22 @@ function tryParseWithRegex(rawText, players) {
     .map((c) => c.trim())
     .filter(Boolean);
 
+  if (clauses.length === 0) return null;
+
   const actions = [];
   const sortedPlayers = [...players].sort((a, b) => b.length - a.length);
 
   for (const clause of clauses) {
-    const matchedPlayer = sortedPlayers.find((p) => clause.includes(normalizePersian(p)));
-    if (!matchedPlayer) continue;
+    const numbersInClause = clause.match(/-?\d+(?:\.\d+)?/g) || [];
+    const matchedPlayers = sortedPlayers.filter((p) => clause.includes(normalizePersian(p)));
 
-    const numMatch = clause.match(/(-?\d+(?:\.\d+)?)/);
-    if (!numMatch) continue;
+    // Strictly require exactly 1 player and 1 number per clause; otherwise escalate full text to AI
+    if (numbersInClause.length !== 1 || matchedPlayers.length !== 1) {
+      return null;
+    }
 
-    const value = Math.abs(parseFloat(numMatch[1]));
-    if (Number.isNaN(value)) continue;
+    const value = Math.abs(parseFloat(numbersInClause[0]));
+    if (Number.isNaN(value)) return null;
 
     let operation = null;
     if (/کم\s*کن|کم\s*شد|منفی|منهای|کسر|جریمه|باخت|از\s+[^\s]+\s+\d+/.test(clause)) {
@@ -222,40 +234,36 @@ function tryParseWithRegex(rawText, players) {
       operation = "ADD";
     }
 
-    if (operation) {
-      actions.push({ player: matchedPlayer, operation, value });
-    }
+    // If any single clause is ambiguous, escalate the entire utterance to AI
+    if (!operation) return null;
+
+    actions.push({ player: matchedPlayers[0], operation, value });
   }
 
-  if (actions.length === 0) return null;
-
-  return {
-    is_score_event: true,
-    actions,
-    note: "استخراج سریع با Regex (بدون مصرف توکن)",
-  };
+  return actions.length > 0
+    ? {
+        is_score_event: true,
+        actions,
+        player_changes: [],
+        note: "استخراج سریع با Regex (بدون مصرف توکن)",
+      }
+    : null;
 }
 
 function fallbackExtractNames(rawText) {
   const stopWords = new Set([
-    "سلام", "خب", "ما", "من", "هستیم", "هستن", "نفریم", "نفر", "بازی",
+    "سلام", "خب", "خوب", "ما", "من", "هستیم", "هستن", "هستند", "نفریم", "نفر", "بازی",
     "میکنیم", "می", "کنیم", "اسم", "اسامی", "شرکت", "کننده", "ها",
-    "بازیکن", "بازیکنان", "اینا", "این", "شامل", "با", "هم", "قراره", "توی",
+    "بازیکن", "بازیکنان", "اینا", "این", "شامل", "با", "هم", "قراره", "توی", "و",
   ]);
 
-  const cleaned = normalizePersian(rawText).replace(/\d+/g, " ").replace(/،/g, " و ");
-  const parts = cleaned
-    .split(/\s+و\s+|,/)
-    .map((chunk) =>
-      chunk
-        .split(" ")
-        .filter((w) => w.length >= 2 && !stopWords.has(w))
-        .join(" ")
-        .trim()
-    )
-    .filter((name) => name.length >= 2);
+  const cleaned = normalizePersian(rawText).replace(/\d+/g, " ").replace(/,/g, " ");
+  const tokens = cleaned
+    .split(" ")
+    .map((w) => w.trim())
+    .filter((w) => w.length >= 2 && !stopWords.has(w));
 
-  return [...new Set(parts)];
+  return [...new Set(tokens)];
 }
 
 /* =========================================================================
@@ -342,8 +350,7 @@ async function callExternalCloudAPI(env, systemPrompt, userPrompt) {
       const errText = await res.text();
       lastError = `GEMINI_${model}_HTTP_${res.status}: ${errText.slice(0, 140)}`;
 
-      // Stop immediately on invalid API key or region block; otherwise try next active model
-      if (res.status === 401 || res.status === 403) {
+      if (res.status === 401 || res.status === 403 || res.status === 429) {
         break;
       }
       if (cachedGeminiModel === model) cachedGeminiModel = null;
@@ -436,12 +443,12 @@ async function callCloudflareWorkersAI(env, systemPrompt, userPrompt) {
         messages: [
           {
             role: "system",
-            content: `${systemPrompt}\nخروجی تو باید فقط و فقط یک آبجکت JSON معتبر و بدون متن اضافه باشد.`,
+            content: `${systemPrompt}\nخروجی تو باید فقط و فقط یک آبجکت JSON معتبر و بدون هیچ متن اضافه باشد.`,
           },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.1,
-        max_tokens: 380,
+        max_tokens: 800,
       });
 
       const content =
@@ -497,10 +504,10 @@ function resolveCanonicalPlayer(nameFromAI, playersList) {
 function applyPlayerChanges(currentPlayers, currentScores, changes) {
   let players = [...(currentPlayers || [])];
   const scores = { ...(currentScores || {}) };
-  let changed = false;
+  const applied = [];
 
   if (!Array.isArray(changes) || changes.length === 0) {
-    return { players, scores, changed: false };
+    return { players, scores, changed: false, applied };
   }
 
   for (const ch of changes) {
@@ -514,26 +521,26 @@ function applyPlayerChanges(currentPlayers, currentScores, changes) {
         const prevScore = Number(scores[targetOld]) || 0;
         delete scores[targetOld];
         scores[newName] = (Number(scores[newName]) || 0) + prevScore;
-        changed = true;
+        applied.push({ type: "RENAME", old_name: targetOld, new_name: newName });
       }
     } else if (type === "ADD") {
       const newName = String(ch.name || ch.new_name || "").trim();
       if (newName && !players.includes(newName)) {
         players.push(newName);
         if (scores[newName] === undefined) scores[newName] = 0;
-        changed = true;
+        applied.push({ type: "ADD", name: newName });
       }
     } else if (type === "REMOVE") {
       const target = resolveCanonicalPlayer(ch.name || ch.old_name, players);
       if (target && players.includes(target)) {
         players = players.filter((p) => p !== target);
         delete scores[target];
-        changed = true;
+        applied.push({ type: "REMOVE", name: target });
       }
     }
   }
 
-  return { players, scores, changed };
+  return { players, scores, changed: applied.length > 0, applied };
 }
 
 function applyScoreActions(currentScores, actions, playersList = []) {
@@ -558,9 +565,9 @@ function applyScoreActions(currentScores, actions, playersList = []) {
   return updated;
 }
 
-async function recomputeGameScores(db, gameId, players) {
+async function recomputeGameScores(db, gameId, currentPlayers) {
   let scores = {};
-  for (const p of players) scores[p] = 0;
+  for (const p of currentPlayers) scores[p] = 0;
 
   const { results: activeLogs } = await db
     .prepare(
@@ -573,19 +580,25 @@ async function recomputeGameScores(db, gameId, players) {
     try {
       const parsed = JSON.parse(row.parsed_json || "{}");
       if (parsed.is_score_event && Array.isArray(parsed.actions)) {
-        scores = applyScoreActions(scores, parsed.actions, players);
+        scores = applyScoreActions(scores, parsed.actions, currentPlayers);
       }
     } catch {
       // skip malformed log
     }
   }
 
+  // Keep only current active players in scores map
+  const cleanedScores = {};
+  for (const p of currentPlayers) {
+    cleanedScores[p] = scores[p] !== undefined ? scores[p] : 0;
+  }
+
   await db
     .prepare("UPDATE games SET scores_json = ? WHERE id = ?")
-    .bind(JSON.stringify(scores), gameId)
+    .bind(JSON.stringify(cleanedScores), gameId)
     .run();
 
-  return scores;
+  return cleanedScores;
 }
 
 async function undoLastScoreLog(db, gameId) {
@@ -595,7 +608,7 @@ async function undoLastScoreLog(db, gameId) {
   const players = JSON.parse(game.players_json || "[]");
   const { results: candidateLogs } = await db
     .prepare(
-      "SELECT id, raw_text, parsed_json FROM voice_logs WHERE game_id = ? AND log_type IN ('gameplay', 'manual') AND status = 'processed' ORDER BY id DESC LIMIT 20"
+      "SELECT id, raw_text, parsed_json FROM voice_logs WHERE game_id = ? AND log_type IN ('gameplay', 'manual') AND status = 'processed' ORDER BY id DESC LIMIT 25"
     )
     .bind(gameId)
     .all();
@@ -816,6 +829,50 @@ export default {
       }
     }
 
+    // 3.5) Reset All Game History (Atomic wipe of games & voice_logs)
+    if (path === "/api/games" && request.method === "DELETE") {
+      if (!env.DB) return jsonResponse({ ok: false, error: "D1 database (DB) is not bound" }, 500);
+      if (url.searchParams.get("confirm") !== "true") {
+        return jsonResponse(
+          { ok: false, error: "برای حذف سابقه ارسال پارامتر confirm=true الزامی است." },
+          400
+        );
+      }
+
+      try {
+        const onlyFinished = url.searchParams.get("only_finished") === "true";
+
+        if (onlyFinished) {
+          const results = await env.DB.batch([
+            env.DB.prepare(
+              "DELETE FROM voice_logs WHERE game_id IN (SELECT id FROM games WHERE status = 'finished')"
+            ),
+            env.DB.prepare("DELETE FROM games WHERE status = 'finished'"),
+          ]);
+          return jsonResponse({
+            ok: true,
+            mode: "only_finished",
+            deleted_logs: results[0]?.meta?.changes || 0,
+            deleted_games: results[1]?.meta?.changes || 0,
+          });
+        }
+
+        const results = await env.DB.batch([
+          env.DB.prepare("DELETE FROM voice_logs"),
+          env.DB.prepare("DELETE FROM games"),
+        ]);
+
+        return jsonResponse({
+          ok: true,
+          mode: "all",
+          deleted_logs: results[0]?.meta?.changes || 0,
+          deleted_games: results[1]?.meta?.changes || 0,
+        });
+      } catch (err) {
+        return jsonResponse({ ok: false, error: err.message }, 500);
+      }
+    }
+
     // 4) Register & Extract Player Names via LLM
     const playersMatch = path.match(/^\/api\/games\/([^/]+)\/players$/);
     if (playersMatch && request.method === "POST") {
@@ -831,7 +888,11 @@ export default {
         let extractedBy = "heuristic_fallback";
 
         const systemPrompt =
-          'تو استخراج‌کننده اسامی بازیکنان فارسی هستی. از متن گفتاری کاربر فقط لیست اسامی تمیز و جداگانه شرکت‌کننده‌ها را استخراج کن (حتی اگر بین دو اسم «و» گفته نشده باشد، مثل «سارا علی» که دو نفر جدا یعنی «سارا» و «علی» هستند). خروجی فقط با این فرمت JSON باشد: {"players": ["اسم۱", "اسم۲"]}';
+          'تو استخراج‌کننده اسامی بازیکنان فارسی هستی. از متن گفتاری کاربر، فقط لیست اسامی تمیز و جداگانه اشخاص را استخراج کن.\n' +
+          'قوانین:\n' +
+          '۱) حتی اگر بین دو اسم «و» گفته نشده باشد، آن‌ها را جدا کن (مثلاً «زهرا سحر علی» -> ["زهرا", "سحر", "علی"]).\n' +
+          '۲) پسوندهای گفتاری آخر جمله مثل «ه» یا «است» یا «هستند» را از آخر اسم آخر حذف کن (مثلاً «شاهینه» -> «شاهین»، «علیه» -> «علی»).\n' +
+          '۳) خروجی فقط این JSON باشد: {"players": ["اسم۱", "اسم۲"]}';
 
         try {
           const { data, provider } = await runAIWithCloudflareFallback(env, systemPrompt, rawText);
@@ -894,6 +955,8 @@ export default {
         let players = JSON.parse(game.players_json || "[]");
         let scores = JSON.parse(game.scores_json || "{}");
         const action = body.action;
+        let logText = "";
+        let playerChange = null;
 
         if (action === "rename") {
           const oldName = String(body.old_name || "").trim();
@@ -909,6 +972,8 @@ export default {
             const oldScore = Number(scores[oldName]) || 0;
             delete scores[oldName];
             scores[newName] = (Number(scores[newName]) || 0) + oldScore;
+            logText = `تغییر نام دستی: «${oldName}» به «${newName}»`;
+            playerChange = { type: "RENAME", old_name: oldName, new_name: newName };
           }
         } else if (action === "add") {
           const name = String(body.name || "").trim();
@@ -916,11 +981,15 @@ export default {
           if (!players.includes(name)) {
             players.push(name);
             if (scores[name] === undefined) scores[name] = 0;
+            logText = `افزودن دستی بازیکن: «${name}»`;
+            playerChange = { type: "ADD", name };
           }
         } else if (action === "remove") {
           const name = String(body.name || "").trim();
           players = players.filter((p) => p !== name);
           delete scores[name];
+          logText = `حذف دستی بازیکن: «${name}»`;
+          playerChange = { type: "REMOVE", name };
         } else if (action === "replace_all" && Array.isArray(body.players)) {
           const nextPlayers = [...new Set(body.players.map((p) => String(p).trim()).filter(Boolean))];
           const nextScores = {};
@@ -929,6 +998,7 @@ export default {
           }
           players = nextPlayers;
           scores = nextScores;
+          logText = `بروزرسانی لیست بازیکنان: ${players.join("، ")}`;
         } else {
           return jsonResponse({ ok: false, error: "عملیات نامعتبر است" }, 400);
         }
@@ -937,13 +1007,30 @@ export default {
           .bind(JSON.stringify(players), JSON.stringify(scores), gameId)
           .run();
 
+        if (logText) {
+          await env.DB.prepare(
+            "INSERT INTO voice_logs (game_id, raw_text, log_type, status, parsed_json, processed_by) VALUES (?, ?, 'player_edit', 'processed', ?, 'manual')"
+          )
+            .bind(
+              gameId,
+              logText,
+              JSON.stringify({
+                is_score_event: false,
+                actions: [],
+                player_changes: playerChange ? [playerChange] : [],
+                note: "ویرایش دستی بازیکنان",
+              })
+            )
+            .run();
+        }
+
         return jsonResponse({ ok: true, game_id: gameId, players, scores });
       } catch (err) {
         return jsonResponse({ ok: false, error: err.message }, 500);
       }
     }
 
-    // 5) Gameplay Utterance (3-Tier Waterfall: Regex -> Cloud API -> Cloudflare Workers AI)
+    // 5) Gameplay Utterance (3-Tier Waterfall + Multi-Sentence Support)
     const utteranceMatch = path.match(/^\/api\/games\/([^/]+)\/utterance$/);
     if (utteranceMatch && request.method === "POST") {
       if (!env.DB) return jsonResponse({ ok: false, error: "D1 database (DB) is not bound" }, 500);
@@ -960,13 +1047,13 @@ export default {
         let players = JSON.parse(game.players_json || "[]");
         let scores = JSON.parse(game.scores_json || "{}");
 
-        // Handle voice Undo immediately with 0 tokens
+        // Handle pure voice Undo immediately with 0 tokens
         if (isUndoIntent(rawText)) {
           const undoRes = await undoLastScoreLog(env.DB, gameId);
           await env.DB.prepare(
             "INSERT INTO voice_logs (game_id, raw_text, log_type, status, parsed_json, processed_by) VALUES (?, ?, 'undo', 'processed', ?, 'regex')"
           )
-            .bind(gameId, rawText, JSON.stringify({ undo: undoRes.ok }))
+            .bind(gameId, rawText, JSON.stringify({ undo: undoRes.ok, note: undoRes.ok ? "بازگشت آخرین تغییر امتیاز" : undoRes.error }))
             .run();
 
           return jsonResponse({
@@ -979,7 +1066,7 @@ export default {
           });
         }
 
-        // Always persist raw spoken text in D1 first
+        // Persist raw spoken text in D1 first
         const insertRes = await env.DB.prepare(
           "INSERT INTO voice_logs (game_id, raw_text, log_type, status) VALUES (?, ?, 'gameplay', 'pending')"
         )
@@ -987,7 +1074,7 @@ export default {
           .run();
         const logId = insertRes.meta.last_row_id;
 
-        // Layer 1: Persian Regex (0 tokens)
+        // Layer 1: Strict Persian Regex (0 tokens)
         let parsed = tryParseWithRegex(rawText, players);
         let processedBy = parsed ? "regex" : null;
         let finalStatus = parsed ? "processed" : "unprocessed";
@@ -995,10 +1082,13 @@ export default {
         // Layer 2 (External Cloud API) -> Layer 3 (Cloudflare Workers AI)
         if (!parsed) {
           const systemPrompt =
-            'تو مفسر هوشمند امتیاز و مدیریت بازیکنان بازی‌های دورهمی فارسی هستی. بر اساس لیست بازیکنان و امتیازهای فعلی، جمله کاربر را تحلیل کن.\n' +
-            '۱) اگر کاربر خواست امتیاز تغییر کند، is_score_event را true بگذار و actions را پر کن (برای انتقال/نصف/درصد مقدار عددی تغییر را با ADD و SUBTRACT دقیق حساب کن).\n' +
-            '۲) اگر کاربر خواست اسم بازیکنی را تغییر دهد، بازیکن جدید اضافه کند یا حذف کند، آرایه player_changes را پر کن.\n' +
-            'فرمت خروجی فقط این JSON باشد: {"is_score_event": true/false, "actions": [{"player": "نام از لیست", "operation": "ADD"|"SUBTRACT"|"SET", "value": 10}], "player_changes": [{"type": "RENAME"|"ADD"|"REMOVE", "old_name": "نام قبلی", "new_name": "نام جدید", "name": "نام برای افزودن یا حذف"}], "note": "توضیح کوتاه"}. اگر جمله ربطی به امتیاز یا تغییر بازیکن نداشت همه آرایه‌ها را [] بگذار.';
+            'تو مفسر هوشمند امتیاز و مدیریت بازیکنان در بازی‌های دورهمی فارسی هستی. متن کاربر ممکن است شامل چندین جمله و چندین دستور پشت‌سرهم بدون نقطه‌گذاری باشد.\n' +
+            'قوانین حیاتی:\n' +
+            '۱) کل متن را از ابتدا تا انتها بررسی کن و هیچ دستوری را جا نینداز.\n' +
+            '۲) اگر چند تغییر امتیاز گفته شد، همه آن‌ها را به ترتیب در آرایه actions قرار بده (حتی اگر مربوط به چند بازیکن یا چند بار برای یک بازیکن باشد).\n' +
+            '۳) اگر درخواست تغییر نام، افزودن یا حذف بازیکن هم در متن بود، همه را در player_changes قرار بده و اگر در ادامه جمله برای همان بازیکن جدید یا تغییرنام‌یافته امتیازی گفته شد، در actions از نام جدید استفاده کن.\n' +
+            '۴) برای انتقال امتیاز، نصف کردن، دوبرابر یا درصد، مقدار عددی دقیق را بر اساس current_scores محاسبه کن و با ADD یا SUBTRACT بنویس.\n' +
+            '۵) خروجی فقط و فقط این JSON باشد: {"is_score_event": true/false, "actions": [{"player": "نام بازیکن", "operation": "ADD"|"SUBTRACT"|"SET", "value": 10}], "player_changes": [{"type": "RENAME"|"ADD"|"REMOVE", "old_name": "نام قبلی", "new_name": "نام جدید", "name": "نام بازیکن"}], "note": "خلاصه کوتاه تمام تغییرات"}. اگر جمله مکالمه عادی بود همه آرایه‌ها را [] بگذار.';
 
           const userPrompt = JSON.stringify({
             players,
@@ -1021,16 +1111,20 @@ export default {
 
         let gameDirty = false;
 
+        // Step A: Apply player changes FIRST so subsequent score actions target updated/new names
         if (parsed && Array.isArray(parsed.player_changes) && parsed.player_changes.length > 0) {
           const resPlayers = applyPlayerChanges(players, scores, parsed.player_changes);
           if (resPlayers.changed) {
             players = resPlayers.players;
             scores = resPlayers.scores;
+            parsed.player_changes = resPlayers.applied;
             gameDirty = true;
           }
         }
 
-        if (parsed && parsed.is_score_event && Array.isArray(parsed.actions) && parsed.actions.length > 0) {
+        // Step B: Apply score actions
+        if (parsed && Array.isArray(parsed.actions) && parsed.actions.length > 0) {
+          parsed.is_score_event = true;
           scores = applyScoreActions(scores, parsed.actions, players);
           gameDirty = true;
         }
@@ -1088,6 +1182,7 @@ export default {
         const parsed = {
           is_score_event: true,
           actions: [action],
+          player_changes: [],
           note: "تغییر دستی روی کارت بازیکن",
         };
         const updatedScores = applyScoreActions(scores, [action], players);
@@ -1102,7 +1197,7 @@ export default {
           .bind(gameId, `تغییر دستی: ${player} (${delta > 0 ? "+" : ""}${delta})`, JSON.stringify(parsed))
           .run();
 
-        return jsonResponse({ ok: true, scores: updatedScores });
+        return jsonResponse({ ok: true, players, scores: updatedScores });
       } catch (err) {
         return jsonResponse({ ok: false, error: err.message }, 500);
       }
@@ -1170,7 +1265,7 @@ export default {
       }
     }
 
-    // 9) Get Single Game Details + Logs (also Delete Game)
+    // 9) Get Single Game Details + Logs (also Delete Single Game)
     const singleGameMatch = path.match(/^\/api\/games\/([^/]+)$/);
     if (singleGameMatch && request.method === "GET") {
       if (!env.DB) return jsonResponse({ ok: false, error: "D1 database (DB) is not bound" }, 500);
@@ -1209,8 +1304,10 @@ export default {
       const gameId = decodeURIComponent(singleGameMatch[1]);
 
       try {
-        await env.DB.prepare("DELETE FROM voice_logs WHERE game_id = ?").bind(gameId).run();
-        await env.DB.prepare("DELETE FROM games WHERE id = ?").bind(gameId).run();
+        await env.DB.batch([
+          env.DB.prepare("DELETE FROM voice_logs WHERE game_id = ?").bind(gameId),
+          env.DB.prepare("DELETE FROM games WHERE id = ?").bind(gameId),
+        ]);
         return jsonResponse({ ok: true, deleted_game_id: gameId });
       } catch (err) {
         return jsonResponse({ ok: false, error: err.message }, 500);
