@@ -1,4 +1,4 @@
-# VoxScore — Smart Voice-Driven Board Game Scorekeeper
+# VoxScore-Smart Voice-Driven Board Game Scorekeeper
 
 **VoxScore** is a 100% cloud-native web application built on **Cloudflare Workers** that automates score tracking, dynamic player management, and match history analytics for tabletop and party games (such as Mafia, Backgammon, UNO, and card games) using colloquial Persian voice commands.
 
@@ -52,7 +52,7 @@ Every spoken command flows from the browser microphone to the D1 database throug
 
 ---
 
-## Database Schema (Cloudflare D1 — SQLite)
+## Database Schema (Cloudflare D1 - SQLite)
 
 The Worker automatically initializes and safely migrates (`ALTER TABLE`) the schema on the first `/api/*` request.
 
