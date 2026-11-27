@@ -40,10 +40,10 @@ Every spoken command flows from the browser microphone to the D1 database throug
 2. **Raw Log Persistence (`POST /api/games/:id/utterance`):**
    * Before any parsing occurs, the backend inserts the raw spoken text into `voice_logs` with `status = 'pending'` so no input is lost if an upstream API times out.
    * Short undo commands (`isUndoIntent`) bypass AI completely, revert the last score-modifying log, and recompute scores immediately.
-3. **Tier 1 — Strict Persian Regex Engine (0 tokens, under 2 ms):**
+3. **Tier 1 - Strict Persian Regex Engine (0 tokens, under 2 ms):**
    * Normalizes Persian/Arabic digits and converts spoken number words (e.g., *"بیست و پنج"* → `25`).
    * Processes short (up to 12 words), single-command utterances directly with `processed_by = 'regex'`. Multi-clause, relational (transfers, halves, percentages), or player-management utterances are escalated to Tier 2.
-4. **Tier 2 & Tier 3 — Cloud LLM with Automatic Workers AI Fallback:**
+4. **Tier 2 & Tier 3 - Cloud LLM with Automatic Workers AI Fallback:**
    * **Tier 2 (`cloud_api`):** When `GEMINI_API_KEY` (or `GROQ_API_KEY` / `GITHUB_TOKEN`) is configured, the Worker auto-discovers active text models and parses multi-sentence instructions into structured JSON actions.
    * **Tier 3 (`cloudflare_ai`):** If no external key is set or a rate-limit/network error (`429`, `5xx`) occurs, the Worker seamlessly falls back to Cloudflare's GPU binding (`env.AI`), iterating through active models (`Llama 3.3 70B`, `Llama 4 Scout`, `Mistral Small 3.1`, `Gemma 3 12B`).
 5. **Deterministic State Update & UI Sync:**
