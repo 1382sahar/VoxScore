@@ -3,1368 +3,1914 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VoxScore | دستیار صوتی بازی، آرشیو و تحلیل هوشمند</title>
-
+  <title>بُردبان | ثبت صوتی امتیاز بازی‌های دورهمی</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
-  <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Vazirmatn', 'Tahoma', 'system-ui', 'sans-serif'],
-          },
-        },
-      },
-    };
+    (function () {
+      const saved = localStorage.getItem("voxscore_theme");
+      const preferred = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", saved || preferred);
+    })();
   </script>
   <style>
-    @keyframes micPulse {
-      0%, 100% { transform: scale(1); opacity: 0.9; }
-      50% { transform: scale(1.25); opacity: 0.35; }
+    :root {
+      --bg: #0b1120;
+      --bg-accent: #172554;
+      --surface: #111827;
+      --surface-glass: rgba(17, 24, 39, 0.88);
+      --surface-2: #1e293b;
+      --card-inner: #0f172a;
+      --border: #273449;
+      --border-hover: #475569;
+      --text: #f1f5f9;
+      --text-strong: #ffffff;
+      --muted: #94a3b8;
+
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-soft: rgba(99, 102, 241, 0.14);
+      --primary-border: rgba(99, 102, 241, 0.4);
+      --primary-text: #a5b4fc;
+
+      --success: #059669;
+      --success-soft: rgba(16, 185, 129, 0.15);
+      --success-border: rgba(16, 185, 129, 0.4);
+      --success-text: #6ee7b7;
+
+      --warning-soft: rgba(245, 158, 11, 0.15);
+      --warning-border: rgba(245, 158, 11, 0.5);
+      --warning-text: #fde68a;
+
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, 0.15);
+      --danger-border: rgba(239, 68, 68, 0.45);
+      --danger-text: #fca5a5;
+
+      --purple-soft: rgba(168, 85, 247, 0.16);
+      --purple-border: rgba(168, 85, 247, 0.45);
+      --purple-text: #d8b4fe;
+
+      --voice-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08));
+      --modal-backdrop: rgba(2, 6, 23, 0.76);
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
-    .animate-mic-pulse {
-      animation: micPulse 1.3s ease-in-out infinite;
+
+    [data-theme="light"] {
+      --bg: #f4f7fb;
+      --bg-accent: #e0e7ff;
+      --surface: #ffffff;
+      --surface-glass: rgba(255, 255, 255, 0.9);
+      --surface-2: #f1f5f9;
+      --card-inner: #f8fafc;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --text: #1e293b;
+      --text-strong: #0f172a;
+      --muted: #64748b;
+
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-soft: rgba(79, 70, 229, 0.08);
+      --primary-border: rgba(79, 70, 229, 0.3);
+      --primary-text: #4338ca;
+
+      --success: #059669;
+      --success-soft: #ecfdf5;
+      --success-border: #a7f3d0;
+      --success-text: #047857;
+
+      --warning-soft: #fffbeb;
+      --warning-border: #fcd34d;
+      --warning-text: #b45309;
+
+      --danger: #dc2626;
+      --danger-soft: #fef2f2;
+      --danger-border: #fecaca;
+      --danger-text: #b91c1c;
+
+      --purple-soft: #faf5ff;
+      --purple-border: #e9d5ff;
+      --purple-text: #7e22ce;
+
+      --voice-bg: linear-gradient(135deg, rgba(79, 70, 229, 0.06), rgba(6, 182, 212, 0.06));
+      --modal-backdrop: rgba(15, 23, 42, 0.45);
+      --shadow: 0 8px 26px rgba(15, 23, 42, 0.07);
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Vazirmatn", Tahoma, system-ui, sans-serif;
+      background: radial-gradient(circle at top right, var(--bg-accent) 0%, var(--bg) 42%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.65;
+      padding-bottom: 60px;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 15px 20px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 21px;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .brand h1 { font-size: 1.2rem; font-weight: 800; color: var(--text-strong); }
+    .brand p { font-size: 0.82rem; color: var(--muted); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      background: var(--surface);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .tab-btn:hover:not(.active) { color: var(--text-strong); background: var(--surface-2); }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Cards & Buttons */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .card-title { font-size: 1.05rem; font-weight: 700; color: var(--text-strong); }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.18s;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 11px;
+      border: 1px solid transparent;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover:not(:disabled) { filter: brightness(1.06); }
+    .btn-danger { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger-text); }
+    .btn-danger:hover:not(:disabled) { filter: brightness(0.96); }
+    .btn-danger-solid { background: var(--danger); color: #fff; }
+    .btn-danger-solid:hover:not(:disabled) { filter: brightness(0.95); }
+    .btn-ghost { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+    .btn-ghost:hover:not(:disabled) { border-color: var(--border-hover); }
+    .btn-sm { padding: 6px 12px; font-size: 0.81rem; border-radius: 9px; }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 10px 13px;
+      color: var(--text-strong);
+      font-family: inherit;
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    input[type="text"]::placeholder, textarea::placeholder { color: var(--muted); }
+
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    /* Idle Hero */
+    .hero-idle {
+      text-align: center;
+      padding: 46px 20px;
+    }
+
+    .hero-idle h2 { font-size: 1.45rem; margin-bottom: 10px; color: var(--text-strong); }
+    .hero-idle p { color: var(--muted); max-width: 520px; margin: 0 auto 24px; font-size: 0.94rem; }
+
+    /* Voice Console */
+    .voice-console {
+      background: var(--voice-bg);
+      border: 1px solid var(--primary-border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .voice-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .mic-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 0.94rem;
+      font-weight: 700;
+      background: var(--surface);
+      color: var(--text-strong);
+      border: 1px solid var(--border);
+    }
+
+    .mic-btn:hover { border-color: var(--primary); }
+
+    .mic-btn.recording {
+      background: var(--danger);
+      color: #fff;
+      border-color: transparent;
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+      70% { box-shadow: 0 0 0 13px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .status-saving {
+      font-size: 0.82rem;
+      color: var(--primary-text);
+      font-weight: 600;
+    }
+
+    .buffer-box {
+      background: var(--card-inner);
+      border: 1px dashed var(--border-hover);
+      border-radius: 12px;
+      padding: 10px 14px;
+      min-height: 46px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .manual-cmd-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Player Cards Grid */
+    .players-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .player-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .player-card.leader {
+      border-color: var(--warning-border);
+      background: var(--surface);
+      box-shadow: 0 0 0 1px var(--warning-border);
+    }
+
+    .player-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .player-name {
+      font-size: 1.04rem;
+      font-weight: 700;
+      color: var(--text-strong);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .player-score {
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      color: var(--text-strong);
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+    }
+
+    .quick-deltas {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .delta-btn {
+      padding: 6px 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-strong);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .delta-btn.plus:hover { background: var(--success-soft); border-color: var(--success-border); color: var(--success-text); }
+    .delta-btn.minus:hover { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger-text); }
+
+    /* Logs */
+    .log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .log-item {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .log-item.reverted {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+
+    .log-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 5px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    .badge-success { background: var(--success-soft); color: var(--success-text); border: 1px solid var(--success-border); }
+    .badge-warning { background: var(--warning-soft); color: var(--warning-text); border: 1px solid var(--warning-border); }
+    .badge-danger { background: var(--danger-soft); color: var(--danger-text); border: 1px solid var(--danger-border); }
+    .badge-purple { background: var(--purple-soft); color: var(--purple-text); border: 1px solid var(--purple-border); }
+    .badge-neutral { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+
+    .log-text { font-size: 0.94rem; color: var(--text-strong); }
+
+    .log-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.89rem;
+    }
+    th, td {
+      padding: 11px 12px;
+      text-align: right;
+      border-bottom: 1px solid var(--border);
+    }
+    th { color: var(--muted); font-weight: 600; background: var(--card-inner); }
+
+    /* History Cards */
+    .history-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-card {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .score-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .score-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.83rem;
+    }
+
+    .score-chip.winner {
+      border-color: var(--warning-border);
+      background: var(--warning-soft);
+      color: var(--warning-text);
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--modal-backdrop);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    .modal h3 { font-size: 1.15rem; margin-bottom: 10px; color: var(--text-strong); }
+    .modal p.sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 14px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+    .edit-player-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      background: var(--card-inner);
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: var(--surface);
+      border: 1px solid var(--primary-border);
+      color: var(--text-strong);
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-size: 0.86rem;
+      box-shadow: var(--shadow);
+      z-index: 200;
+      display: none;
+      max-width: 340px;
+    }
+
+    .toast.show { display: block; }
+
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-box .val { font-size: 1.65rem; font-weight: 800; color: var(--text-strong); }
+    .stat-box .lbl { font-size: 0.82rem; color: var(--muted); }
+
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 12px;
+    }
+
+    .ask-answer {
+      margin-top: 14px;
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      color: var(--text-strong);
+      border-radius: 12px;
+      padding: 14px;
+      display: none;
+    }
+
+    .hidden { display: none !important; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
-
-  <!-- ===================================================================== -->
-  <!-- TOP HEADER & NAVIGATION TABS                                          -->
-  <!-- ===================================================================== -->
-  <header class="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 shrink-0">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
-          </svg>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-logo">ب</div>
+        <div>
+          <h1>بُردبان</h1>
+          <p>ثبت صوتی امتیاز و مدیریت بازی‌های دورهمی</p>
         </div>
-        <div class="min-w-0">
-          <h1 class="text-base sm:text-lg font-extrabold text-white leading-tight truncate">VoxScore</h1>
-          <p class="text-[11px] sm:text-xs text-slate-400 truncate">مدیریت صوتی بازی با پردازش ۳ لایه روی کلودفلر</p>
+      </div>
+      <button type="button" id="themeToggleBtn" class="btn btn-ghost btn-sm" onclick="toggleTheme()">
+        ☀️ حالت روشن
+      </button>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-tab="live" onclick="switchTab('live')">بازی زنده</button>
+      <button type="button" class="tab-btn" data-tab="history" onclick="switchTab('history')">سابقه بازی‌ها</button>
+      <button type="button" class="tab-btn" data-tab="stats" onclick="switchTab('stats')">آمار و پرسش</button>
+    </div>
+
+    <!-- ===================== TAB 1: LIVE GAME ===================== -->
+    <section id="tab-live" class="tab-panel active">
+      <!-- Idle State -->
+      <div id="idleView" class="card hero-idle">
+        <h2>آماده شروع یک بازی جدید هستید؟</h2>
+        <p>
+          اسامی بازیکنان را صوتی یا متنی وارد کنید و در طول بازی فقط صحبت کنید تا امتیازها و تغییرات بازیکنان به‌صورت خودکار ثبت شوند.
+        </p>
+        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" style="padding:12px 28px; font-size:0.98rem;" onclick="openWelcomeModal()">
+            شروع بازی جدید
+          </button>
+          <button type="button" id="resumeGameBtn" class="btn btn-ghost hidden" onclick="resumeExistingActiveGame()">
+            ادامه بازی نیمه‌تمام قبلی
+          </button>
         </div>
       </div>
 
-      <!-- Live Cloud Health Status -->
-      <div class="flex items-center gap-2 shrink-0 text-[11px]">
-        <span id="dbStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
-          <span class="w-2 h-2 rounded-full bg-slate-500"></span>
-          <span>D1...</span>
-        </span>
-        <span id="aiStatusBadge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
-          <span>AI...</span>
-        </span>
-      </div>
-    </div>
-
-    <!-- 3 Main Tabs -->
-    <div class="max-w-5xl mx-auto px-4 pb-2.5">
-      <nav class="grid grid-cols-3 gap-1.5 p-1 bg-slate-900 rounded-2xl border border-slate-800">
-        <button data-tab="live" type="button" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition bg-indigo-600 text-white shadow">
-          بازی زنده
-        </button>
-        <button data-tab="archive" type="button" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white">
-          سابقه و آرشیو
-        </button>
-        <button data-tab="stats" type="button" class="tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white">
-          آمار و پرسش هوشمند
-        </button>
-      </nav>
-    </div>
-  </header>
-
-  <!-- ===================================================================== -->
-  <!-- MAIN CONTENT                                                          -->
-  <!-- ===================================================================== -->
-  <main class="max-w-5xl mx-auto px-4 py-5 space-y-5 pb-16">
-
-    <!-- Browser Compatibility Notice -->
-    <div id="speechWarning" class="hidden rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3.5 text-xs sm:text-sm text-amber-300 leading-relaxed">
-      مرورگر فعلی از Web Speech API پشتیبانی نمی‌کند. برای ضبط صدا از <strong>Google Chrome</strong> استفاده کنید؛ اما همچنان می‌توانید همه فرمان‌ها را در کادر متنی وارد کنید.
-    </div>
-
-    <!-- =================================================================== -->
-    <!-- TAB 1: LIVE GAME WORKSPACE                                          -->
-    <!-- =================================================================== -->
-    <section id="tab-live" class="tab-panel space-y-5">
-
-      <!-- Start / End Game Master Control Card -->
-      <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950/60 to-slate-900 border border-indigo-500/25 p-5 shadow-xl space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-2">
-              <span id="gameStateDot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
-              <h2 id="gameStateTitle" class="text-base sm:text-lg font-extrabold text-white">آماده برای شروع بازی جدید</h2>
-            </div>
-            <p id="gameStateSubtitle" class="text-xs text-slate-400 mt-1">
-              روی «شروع بازی» بزن تا پس از خوش‌آمدگویی، اسامی شرکت‌کننده‌ها را صوتی اعلام کنی.
-            </p>
-          </div>
-
-          <div class="flex items-center gap-2 shrink-0">
-            <button id="startGameBtn" type="button" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-bold transition shadow-lg shadow-emerald-600/25">
-              شروع بازی
-            </button>
-            <button id="endGameBtn" type="button" disabled class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold transition shadow-lg shadow-rose-600/25">
-              اتمام بازی
-            </button>
-          </div>
-        </div>
-
-        <!-- Optional Game Name Input (Visible Before Starting) -->
-        <div id="preGameTitleRow" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-slate-800/70">
-          <label for="gameTitleInput" class="text-xs text-slate-400 shrink-0">نام بازی (اختیاری):</label>
-          <input
-            id="gameTitleInput"
-            type="text"
-            placeholder="مثلاً: حکم شبانه، کتان، مافیا، تخته..."
-            class="flex-1 rounded-xl bg-slate-950/80 border border-slate-700 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-
-        <!-- Active Voice Console (Shown Only While Game Is Active) -->
-        <div id="activeVoiceConsole" class="hidden pt-3 border-t border-slate-800/80 space-y-3">
-          <div class="flex flex-col sm:flex-row items-center gap-3">
-            <!-- Mic Toggle Button -->
-            <div class="relative flex items-center justify-center shrink-0">
-              <span id="liveMicPulse" class="hidden absolute w-16 h-16 rounded-full bg-rose-500/40 animate-mic-pulse"></span>
-              <button
-                id="toggleLiveMicBtn"
-                type="button"
-                class="relative w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center text-white shadow-lg transition"
-                title="قطع / وصل موقت میکروفون"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
-                </svg>
-              </button>
-            </div>
-
-            <!-- Live Transcript Readout -->
-            <div class="flex-1 w-full rounded-2xl bg-slate-950/90 border border-slate-800 px-4 py-3 min-h-[54px] flex items-center justify-between gap-2">
-              <div class="min-w-0">
-                <span id="micLiveStatusLabel" class="text-[11px] font-bold text-rose-400 block">در حال گوش دادن پیوسته تا پایان بازی...</span>
-                <p id="liveHeardText" class="text-sm text-slate-200 truncate">جمله بعدی را بگویید (مثلاً: «سحر ۲۰ امتیاز گرفت»)</p>
+      <!-- Active Game View -->
+      <div id="activeView" class="hidden">
+        <!-- Game Top Controls -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom:0;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <h2 id="activeGameTitle" class="card-title">بازی دورهمی</h2>
+                <span class="badge badge-success">در حال اجرا</span>
               </div>
-              <button id="undoScoreBtn" type="button" class="shrink-0 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold transition">
-                بازگشت (Undo)
-              </button>
+              <p id="activeGameSubtitle" style="font-size:0.82rem; color:var(--muted); margin-top:2px;"></p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="openEditPlayersModal()">ویرایش بازیکنان</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="undoLastAction()">بازگشت آخرین امتیاز</button>
+              <button type="button" class="btn btn-danger-solid btn-sm" onclick="endCurrentGame()">اتمام بازی</button>
             </div>
           </div>
+        </div>
 
-          <!-- Manual Text Input (Always available as backup or fast test) -->
-          <form id="manualUtteranceForm" class="flex flex-col sm:flex-row gap-2">
-            <input
-              id="manualUtteranceInput"
-              type="text"
-              placeholder="یا جمله بازی را اینجا بنویس (مثلاً: «از علی ۵ تا کم کن» یا «نصف امتیاز سحر رو بده به علی»)"
-              class="flex-1 rounded-xl bg-slate-950/90 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition shrink-0">
-              ارسال و پردازش
+        <!-- Continuous Voice Console -->
+        <div class="voice-console">
+          <div class="voice-top">
+            <button type="button" id="liveMicBtn" class="mic-btn" onclick="toggleLiveMic()">
+              <span id="liveMicIcon">🎙️</span>
+              <span id="liveMicLabel">شروع شنیدن زنده</span>
             </button>
+            <span id="savingStatus" class="status-saving hidden">در حال ثبت...</span>
+          </div>
+
+          <div id="speechWarning" class="hidden" style="font-size:0.82rem; color:var(--warning-text); margin-bottom:8px;">
+            برای استفاده از میکروفون زنده از مرورگر Chrome یا Edge استفاده کنید. کادر متنی پایین در همه مرورگرها فعال است.
+          </div>
+
+          <div class="buffer-box">
+            <div id="liveTranscriptDisplay" style="flex:1;">
+              میکروفون را روشن کنید و امتیازها را بگویید؛ می‌توانید چند جمله پشت‌سرهم صحبت کنید.
+            </div>
+            <button type="button" id="flushBufferBtn" class="btn btn-primary btn-sm hidden" onclick="flushSpeechBufferNow()">
+              ثبت فوری
+            </button>
+          </div>
+
+          <form class="manual-cmd-row" onsubmit="handleManualCommandSubmit(event)">
+            <input
+              type="text"
+              id="manualCmdInput"
+              placeholder="یا دستور را اینجا بنویسید (مثلاً: سارا ۱۰ امتیاز گرفت، از شاهین ۵ تا کم کن)..."
+            />
+            <button type="submit" class="btn btn-primary">ثبت</button>
           </form>
-
-          <!-- Quick Test Chips -->
-          <div id="quickChipsRow" class="flex flex-wrap items-center gap-1.5 text-[11px]"></div>
-        </div>
-      </div>
-
-      <!-- 3-Tier Engine Counters -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="rounded-2xl bg-slate-900/90 border border-emerald-500/25 p-3.5 flex items-center justify-between">
-          <div>
-            <span class="text-xs font-bold text-emerald-400 block">لایه ۱: Regex (۰ توکن)</span>
-            <span class="text-[11px] text-slate-400">جملات ساده و سریع</span>
-          </div>
-          <span id="statRegexCount" class="text-2xl font-extrabold text-emerald-400">۰</span>
         </div>
 
-        <div class="rounded-2xl bg-slate-900/90 border border-sky-500/25 p-3.5 flex items-center justify-between">
-          <div>
-            <span class="text-xs font-bold text-sky-400 block">لایه ۲: Cloud API</span>
-            <span class="text-[11px] text-slate-400">Gemini / Groq / GitHub</span>
+        <!-- Player Score Cards -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">جدول امتیاز بازیکنان</h3>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="openEditPlayersModal()">+ مدیریت بازیکنان</button>
           </div>
-          <span id="statApiCount" class="text-2xl font-extrabold text-sky-400">۰</span>
+          <div id="playersGrid" class="players-grid"></div>
         </div>
 
-        <div class="rounded-2xl bg-slate-900/90 border border-violet-500/25 p-3.5 flex items-center justify-between">
-          <div>
-            <span class="text-xs font-bold text-violet-400 block">لایه ۳: Cloudflare AI</span>
-            <span class="text-[11px] text-slate-400">جایگزین خودکار روی GPU کلودفلر</span>
+        <!-- Live Utterance Logs -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">تاریخچه رویدادهای این بازی</h3>
+            <span id="liveLogsCount" style="font-size:0.82rem; color:var(--muted);">۰ مورد</span>
           </div>
-          <span id="statCfAiCount" class="text-2xl font-extrabold text-violet-400">۰</span>
-        </div>
-      </div>
-
-      <!-- Scoreboard + Live Utterance Feed -->
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <!-- Scoreboard (3 cols) -->
-        <div class="lg:col-span-3 rounded-3xl bg-slate-900/90 border border-slate-800 p-5 space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm sm:text-base font-bold text-white">تابلوی امتیازات زنده</h3>
-            <span id="activePlayersCountBadge" class="text-xs text-slate-400">۰ شرکت‌کننده</span>
-          </div>
-          <div id="scoreboardGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="sm:col-span-2 rounded-2xl border border-dashed border-slate-700 p-8 text-center text-xs text-slate-400">
-              پس از زدن «شروع بازی» و معرفی شرکت‌کننده‌ها، کارت امتیاز بازیکنان اینجا ظاهر می‌شود.
-            </div>
-          </div>
-        </div>
-
-        <!-- Live Logs Feed (2 cols) -->
-        <div class="lg:col-span-2 rounded-3xl bg-slate-900/90 border border-slate-800 p-5 flex flex-col max-h-[470px]">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <h3 class="text-sm sm:text-base font-bold text-white">لاگ مکالمات این بازی</h3>
-            <span id="activeLogsCountBadge" class="text-xs text-slate-400">۰ پیام</span>
-          </div>
-          <div id="liveLogsList" class="flex-1 overflow-y-auto divide-y divide-slate-800/70 mt-2 space-y-1">
-            <p class="text-xs text-slate-500 text-center py-10">هنوز جمله‌ای در این بازی ثبت نشده است.</p>
-          </div>
+          <div id="liveLogsList" class="log-list"></div>
         </div>
       </div>
     </section>
 
-    <!-- =================================================================== -->
-    <!-- TAB 2: ARCHIVE & GAME HISTORY (FROM CLOUDFLARE D1)                  -->
-    <!-- =================================================================== -->
-    <section id="tab-archive" class="tab-panel hidden space-y-4">
-      <div class="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <!-- ===================== TAB 2: HISTORY ===================== -->
+    <section id="tab-history" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
           <div>
-            <h2 class="text-base font-extrabold text-white">سابقه و آرشیو بازی‌ها (Cloudflare D1)</h2>
-            <p class="text-xs text-slate-400 mt-0.5">تمام بازی‌های ذخیره‌شده همراه با ریز مکالمات و امتیازها</p>
+            <h2 class="card-title">سابقه بازی‌ها</h2>
+            <p style="font-size:0.82rem; color:var(--muted);">مشاهده نتایج، ریز مکالمات و مدیریت آرشیو بازی‌ها</p>
           </div>
-          <div class="flex items-center gap-2">
-            <input
-              id="archiveSearchInput"
-              type="text"
-              placeholder="جستجو نام بازی یا بازیکن..."
-              class="rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-56"
-            />
-            <button id="refreshArchiveBtn" type="button" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition shrink-0">
-              به‌روزرسانی
-            </button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="loadHistory()">بروزرسانی</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="exportHistoryBackup()">دانلود بکاپ</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="resetAllHistory()">پاک‌سازی سابقه</button>
           </div>
         </div>
-
-        <div id="archiveGamesList" class="space-y-3">
-          <p class="text-xs text-slate-400 text-center py-8">در حال بارگذاری سوابق از دیتابیس...</p>
+        <div id="historyList" class="history-grid">
+          <p style="color:var(--muted); text-align:center; padding:24px;">در حال بارگذاری سابقه...</p>
         </div>
       </div>
     </section>
 
-    <!-- =================================================================== -->
-    <!-- TAB 3: PLAYER CAREER STATS & SMART Q&A                              -->
-    <!-- =================================================================== -->
-    <section id="tab-stats" class="tab-panel hidden space-y-5">
-      <!-- Smart Q&A Box -->
-      <div class="rounded-3xl bg-gradient-to-l from-violet-950/60 to-indigo-950/60 border border-indigo-500/30 p-5 space-y-3">
-        <div>
-          <h2 class="text-base font-extrabold text-white">پرسش هوشمند از سابقه بازی‌ها</h2>
-          <p class="text-xs text-indigo-200/80 mt-0.5">سوال فارسی بپرس تا مستقیم از روی داده‌های واقعی دیتابیس D1 پاسخ دقیق بگیری</p>
+    <!-- ===================== TAB 3: STATS & Q&A ===================== -->
+    <section id="tab-stats" class="tab-panel">
+      <div class="stats-summary">
+        <div class="stat-box">
+          <div id="statTotalGames" class="val">۰</div>
+          <div class="lbl">بازی‌های پایان‌یافته</div>
         </div>
+        <div class="stat-box">
+          <div id="statTotalLogs" class="val">۰</div>
+          <div class="lbl">رویدادهای ثبت‌شده</div>
+        </div>
+        <div class="stat-box">
+          <div id="statTotalPlayers" class="val">۰</div>
+          <div class="lbl">تعداد بازیکنان</div>
+        </div>
+      </div>
 
-        <form id="askHistoryForm" class="flex flex-col sm:flex-row gap-2">
-          <input
-            id="askHistoryInput"
-            type="text"
-            placeholder="مثلاً: کی بیشتر از همه برده؟ یا آخرین بازی چی بوده؟"
-            class="flex-1 rounded-xl bg-slate-950/80 border border-slate-700 px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-          />
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold transition shrink-0">
-            بپرس
-          </button>
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">پرسش از سابقه بازی‌ها</h2>
+        </div>
+        <form style="display:flex; gap:8px;" onsubmit="handleAskSubmit(event)">
+          <input type="text" id="askInput" placeholder="سوال بپرسید (مثلاً: سارا تا حالا چند بار برده یا آخرین بازی چی شد؟)..." />
+          <button type="button" id="askMicBtn" class="btn btn-ghost" title="پرسش صوتی" onclick="startAskVoice()">🎙️</button>
+          <button type="submit" id="askSubmitBtn" class="btn btn-primary">بپرس</button>
         </form>
-
-        <div class="flex flex-wrap gap-1.5">
-          <button type="button" class="ask-chip px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-indigo-100 transition">کی بیشتر از همه برده؟</button>
-          <button type="button" class="ask-chip px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-indigo-100 transition">آخرین بازی چی بوده؟</button>
-          <button type="button" class="ask-chip px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-indigo-100 transition">بیشترین رکورد امتیاز مال کیه؟</button>
+        <div class="preset-chips">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="askPreset('کی بیشتر از همه برده؟')">کی بیشتر برده؟</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="askPreset('نتیجه آخرین بازی چی شد؟')">نتیجه آخرین بازی</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="askPreset('بالاترین رکورد امتیاز مال کیه؟')">رکورد بیشترین امتیاز</button>
         </div>
-
-        <div id="askAnswerBox" class="hidden rounded-2xl bg-slate-950/90 border border-violet-500/40 p-4 text-sm text-slate-100 leading-relaxed"></div>
+        <div id="askAnswerBox" class="ask-answer"></div>
       </div>
 
-      <!-- Summary KPIs -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="rounded-2xl bg-slate-900 border border-slate-800 p-4">
-          <span class="text-xs text-slate-400 block">کل بازی‌های پایان‌یافته</span>
-          <span id="kpiTotalGames" class="text-2xl font-extrabold text-white mt-1 block">۰</span>
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">جدول آمار بازیکنان</h2>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="loadStats()">بروزرسانی</button>
         </div>
-        <div class="rounded-2xl bg-slate-900 border border-slate-800 p-4">
-          <span class="text-xs text-slate-400 block">کل مکالمات ذخیره‌شده در D1</span>
-          <span id="kpiTotalLogs" class="text-2xl font-extrabold text-indigo-400 mt-1 block">۰</span>
-        </div>
-      </div>
-
-      <!-- Player Leaderboard Stats -->
-      <div class="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm sm:text-base font-bold text-white">پروفایل آماری بازیکنان</h3>
-          <button id="refreshStatsBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">
-            به‌روزرسانی
-          </button>
-        </div>
-        <div id="statsPlayersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <p class="text-xs text-slate-400 sm:col-span-2 lg:col-span-3 text-center py-6">در حال بارگذاری آمار...</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>بازیکن</th>
+                <th>تعداد بازی</th>
+                <th>بردها</th>
+                <th>نرخ برد</th>
+                <th>میانگین امتیاز</th>
+                <th>بالاترین رکورد</th>
+              </tr>
+            </thead>
+            <tbody id="statsTableBody">
+              <tr><td colspan="6" style="text-align:center; color:var(--muted);">داده‌ای برای نمایش وجود ندارد.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
-  </main>
+  </div>
 
-  <!-- ===================================================================== -->
-  <!-- ALERT 1 MODAL: WELCOME MESSAGE ON GAME START                          -->
-  <!-- ===================================================================== -->
-  <div id="welcomeModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-center">
-      <div class="w-14 h-14 mx-auto rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl font-extrabold">
-        🎙️
-      </div>
-      <h3 class="text-lg font-extrabold text-white">به VoxScore خوش آمدید!</h3>
-      <p id="welcomeModalText" class="text-sm text-slate-300 leading-relaxed">
-        بازی جدید شما با موفقیت در دیتابیس کلودفلر ساخته شد. در مرحله بعد لطفاً نام شرکت‌کننده‌ها را اعلام کنید.
+  <!-- ===================== MODAL 1: WELCOME & TITLE ===================== -->
+  <div id="welcomeModal" class="modal-backdrop">
+    <div class="modal">
+      <h3>شروع بازی جدید</h3>
+      <p class="sub">
+        یک عنوان دلخواه برای این دست بازی انتخاب کنید و سپس اسامی شرکت‌کننده‌ها را وارد کنید.
       </p>
-      <button id="welcomeNextBtn" type="button" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition">
-        ادامه ← اعلام اسم شرکت‌کننده‌ها
-      </button>
+      <label style="display:block; font-size:0.85rem; margin-bottom:6px; color:var(--muted);">عنوان بازی</label>
+      <input type="text" id="newGameTitleInput" value="بازی دورهمی" placeholder="مثلاً: مافیا، تخته، اونو، منچ..." />
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('welcomeModal')">انصراف</button>
+        <button type="button" id="confirmStartGameBtn" class="btn btn-primary" onclick="createGameAndAskPlayers()">
+          ادامه و ثبت اسامی
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- ALERT 2 MODAL: ANNOUNCE PARTICIPANT NAMES (VOICE OR TEXT -> LLM)      -->
-  <!-- ===================================================================== -->
-  <div id="playersModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-emerald-500/40 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-      <div class="flex items-start justify-between gap-2">
-        <div>
-          <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[11px] font-bold">مرحله ۲ از ۲</span>
-          <h3 class="text-lg font-extrabold text-white mt-1">اسم شرکت‌کننده‌ها را بگویید</h3>
-        </div>
-        <button id="cancelPlayersModalBtn" type="button" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 text-xs">انصراف</button>
-      </div>
-
-      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-        میکروفون را بزن و اسم بازیکن‌ها را بگو (مثلاً: <em>«ما سه نفریم، سحر و پویا و علی بازی می‌کنیم»</em>). هوش مصنوعی اسامی را استخراج و بازی را شروع می‌کند.
+  <!-- ===================== MODAL 2: REGISTER PLAYERS ===================== -->
+  <div id="playersModal" class="modal-backdrop">
+    <div class="modal">
+      <h3>اعلام اسامی شرکت‌کننده‌ها</h3>
+      <p class="sub">
+        دکمه میکروفون را بزنید و اسامی را بگویید (مثلاً: «سارا، علی و شاهین») یا مستقیم در کادر زیر بنویسید.
       </p>
-
-      <div class="flex items-center gap-3">
-        <button id="playersMicBtn" type="button" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold transition shrink-0">
-          شروع ضبط اسامی
+      <div style="margin-bottom:12px;">
+        <button type="button" id="playersMicBtn" class="mic-btn" onclick="togglePlayersMic()">
+          <span id="playersMicIcon">🎙️</span>
+          <span id="playersMicLabel">ضبط صوتی اسامی</span>
         </button>
-        <span id="playersMicStatus" class="text-xs text-slate-400">برای گفتن اسامی کلیک کن یا پایین تایپ کن</span>
       </div>
-
-      <textarea
-        id="playersRawInput"
-        rows="3"
-        placeholder="متن گفته‌شده اینجا ظاهر می‌شود (می‌توانید دستی هم بنویسید یا ویرایش کنید)..."
-        class="w-full rounded-2xl bg-slate-950 border border-slate-700 p-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-      ></textarea>
-
-      <button id="confirmPlayersBtn" type="button" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition">
-        تأیید و استخراج اسامی با هوش مصنوعی
-      </button>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- END GAME SUMMARY MODAL                                                -->
-  <!-- ===================================================================== -->
-  <div id="endSummaryModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-center">
-      <div class="text-4xl">🏆</div>
-      <h3 class="text-lg font-extrabold text-white">بازی به پایان رسید!</h3>
-      <p id="endSummaryHeadline" class="text-sm text-amber-300 font-semibold"></p>
-      <div id="endSummaryScores" class="space-y-2 text-right"></div>
-      <p id="endSummaryWarning" class="hidden text-xs text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-xl p-3"></p>
-      <div class="flex gap-2 pt-2">
-        <button id="goToArchiveAfterEndBtn" type="button" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold transition">
-          مشاهده در آرشیو
-        </button>
-        <button id="closeEndSummaryBtn" type="button" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold transition">
-          بستن
+      <textarea id="playersRawInput" rows="3" placeholder="اسامی شرکت‌کننده‌ها اینجا ثبت می‌شود..."></textarea>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="cancelPlayersRegistration()">لغو</button>
+        <button type="button" id="submitPlayersBtn" class="btn btn-success" onclick="submitPlayerNames()">
+          تأیید و شروع بازی
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- GAME DETAILS & LOGS INSPECTOR MODAL (FOR ARCHIVE TAB)                 -->
-  <!-- ===================================================================== -->
-  <div id="gameDetailsModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
-      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-        <div>
-          <h3 id="detailModalTitle" class="text-base font-bold text-white">جزئیات بازی</h3>
-          <p id="detailModalMeta" class="text-xs text-slate-400 mt-0.5"></p>
+  <!-- ===================== MODAL 3: EDIT PLAYERS MID-GAME ===================== -->
+  <div id="editPlayersModal" class="modal-backdrop">
+    <div class="modal">
+      <h3>مدیریت و اصلاح اسامی بازیکنان</h3>
+      <p class="sub">با تغییر نام یک بازیکن، امتیاز فعلی او حفظ می‌شود.</p>
+
+      <div id="editPlayersList"></div>
+
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+        <label style="display:block; font-size:0.84rem; color:var(--muted); margin-bottom:6px;">افزودن بازیکن جدید</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="addPlayerNameInput" placeholder="نام بازیکن جدید..." />
+          <button type="button" class="btn btn-primary" onclick="addPlayerManually()">افزودن</button>
         </div>
-        <button id="closeDetailModalBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300">بستن</button>
       </div>
-      <div id="detailModalBody" class="p-5 overflow-y-auto flex-1 space-y-4"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('editPlayersModal')">بستن</button>
+      </div>
     </div>
   </div>
 
-  <!-- TOAST CONTAINER -->
-  <div id="toastContainer" class="fixed bottom-4 left-4 right-4 sm:right-auto sm:w-96 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <!-- ===================== MODAL 4: GAME DETAILS ===================== -->
+  <div id="gameDetailModal" class="modal-backdrop">
+    <div class="modal" style="max-width:640px;">
+      <div class="card-header" style="margin-bottom:10px;">
+        <h3 id="detailModalTitle">جزئیات بازی</h3>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('gameDetailModal')">بستن</button>
+      </div>
+      <p id="detailModalSummary" class="sub"></p>
+      <div id="detailModalLogs" class="log-list"></div>
+    </div>
+  </div>
 
-  <!-- ===================================================================== -->
-  <!-- APPLICATION JAVASCRIPT                                                -->
-  <!-- ===================================================================== -->
+  <!-- ===================== MODAL 5: WINNER SUMMARY ===================== -->
+  <div id="winnerModal" class="modal-backdrop">
+    <div class="modal" style="text-align:center;">
+      <div style="font-size:2.6rem; margin-bottom:6px;">🏆</div>
+      <h3>پایان بازی!</h3>
+      <p id="winnerSummaryText" class="sub" style="font-size:0.98rem; color:var(--warning-text); font-weight:600;"></p>
+      <div id="winnerScoresList" class="score-chips" style="justify-content:center; margin-bottom:16px;"></div>
+      <div class="modal-actions" style="justify-content:center;">
+        <button type="button" class="btn btn-primary" onclick="closeWinnerAndShowHistory()">مشاهده در سابقه</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('winnerModal')">بستن</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
   <script>
-    (() => {
-      'use strict';
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-      // App State
-      let currentGameId = sessionStorage.getItem('voxscore_active_game_id') || null;
-      let currentGameTitle = 'بازی دورهمی';
-      let currentGameStatus = 'idle'; // 'idle' | 'registering_players' | 'active' | 'finished'
-      let players = [];
-      let scores = {};
-      let liveLogs = [];
-      let archiveGamesCache = [];
-
-      // Speech Recognition State
-      let liveRec = null;
-      let shouldKeepListening = false;
-      let isLiveRecActive = false;
-
-      let playersRec = null;
-      let isPlayersRecActive = false;
-
-      // DOM Elements
-      const dbStatusBadge = document.getElementById('dbStatusBadge');
-      const aiStatusBadge = document.getElementById('aiStatusBadge');
-      const speechWarning = document.getElementById('speechWarning');
-
-      const startGameBtn = document.getElementById('startGameBtn');
-      const endGameBtn = document.getElementById('endGameBtn');
-      const gameTitleInput = document.getElementById('gameTitleInput');
-      const preGameTitleRow = document.getElementById('preGameTitleRow');
-      const activeVoiceConsole = document.getElementById('activeVoiceConsole');
-      const gameStateDot = document.getElementById('gameStateDot');
-      const gameStateTitle = document.getElementById('gameStateTitle');
-      const gameStateSubtitle = document.getElementById('gameStateSubtitle');
-
-      const toggleLiveMicBtn = document.getElementById('toggleLiveMicBtn');
-      const liveMicPulse = document.getElementById('liveMicPulse');
-      const micLiveStatusLabel = document.getElementById('micLiveStatusLabel');
-      const liveHeardText = document.getElementById('liveHeardText');
-      const manualUtteranceForm = document.getElementById('manualUtteranceForm');
-      const manualUtteranceInput = document.getElementById('manualUtteranceInput');
-      const undoScoreBtn = document.getElementById('undoScoreBtn');
-      const quickChipsRow = document.getElementById('quickChipsRow');
-
-      const scoreboardGrid = document.getElementById('scoreboardGrid');
-      const liveLogsList = document.getElementById('liveLogsList');
-
-      // Modals
-      const welcomeModal = document.getElementById('welcomeModal');
-      const welcomeModalText = document.getElementById('welcomeModalText');
-      const welcomeNextBtn = document.getElementById('welcomeNextBtn');
-
-      const playersModal = document.getElementById('playersModal');
-      const playersMicBtn = document.getElementById('playersMicBtn');
-      const playersMicStatus = document.getElementById('playersMicStatus');
-      const playersRawInput = document.getElementById('playersRawInput');
-      const confirmPlayersBtn = document.getElementById('confirmPlayersBtn');
-      const cancelPlayersModalBtn = document.getElementById('cancelPlayersModalBtn');
-
-      const endSummaryModal = document.getElementById('endSummaryModal');
-      const endSummaryHeadline = document.getElementById('endSummaryHeadline');
-      const endSummaryScores = document.getElementById('endSummaryScores');
-      const endSummaryWarning = document.getElementById('endSummaryWarning');
-
-      const gameDetailsModal = document.getElementById('gameDetailsModal');
-      const detailModalTitle = document.getElementById('detailModalTitle');
-      const detailModalMeta = document.getElementById('detailModalMeta');
-      const detailModalBody = document.getElementById('detailModalBody');
-
-      /* -------------------------------------------------------------------
-       * UTILITIES & API CLIENT
-       * ------------------------------------------------------------------- */
-      function formatFa(n) {
-        if (n === null || n === undefined || Number.isNaN(Number(n))) return '۰';
-        return new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 }).format(Number(n));
+    /* =====================================================================
+     * THEME (DARK / LIGHT MODE)
+     * ===================================================================== */
+    function applyTheme(theme) {
+      const next = theme === "light" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("voxscore_theme", next);
+      const btn = document.getElementById("themeToggleBtn");
+      if (btn) {
+        btn.textContent = next === "light" ? "🌙 حالت تیره" : "☀️ حالت روشن";
       }
+    }
 
-      function formatDateFa(iso) {
-        if (!iso) return '';
-        try {
-          const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T') + 'Z');
-          return new Intl.DateTimeFormat('fa-IR', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          }).format(d);
-        } catch {
-          return iso;
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(current === "dark" ? "light" : "dark");
+    }
+
+    function initTheme() {
+      const current = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(current);
+    }
+
+    /* =====================================================================
+     * GLOBAL STATE
+     * ===================================================================== */
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    let currentGame = null;
+    let detectedActiveGameId = null;
+
+    let liveRecognition = null;
+    let isLiveMicActive = false;
+    let speechBuffer = [];
+    let interimText = "";
+    let bufferTimer = null;
+    const BUFFER_DELAY_MS = 1400;
+
+    const utteranceQueue = [];
+    let isProcessingQueue = false;
+
+    let playersRecognition = null;
+    let isPlayersMicActive = false;
+
+    /* =====================================================================
+     * HELPERS
+     * ===================================================================== */
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function toFaNum(val) {
+      return String(val ?? "").replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]);
+    }
+
+    function formatTime(isoStr, includeYear = false) {
+      if (!isoStr) return "";
+      try {
+        const d = new Date(isoStr.includes("T") ? isoStr : isoStr.replace(" ", "T") + "Z");
+        const opts = includeYear
+          ? { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }
+          : { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" };
+        return new Intl.DateTimeFormat("fa-IR", opts).format(d);
+      } catch {
+        return isoStr;
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 3200);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add("open");
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove("open");
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-btn").forEach((b) => {
+        b.classList.toggle("active", b.dataset.tab === tabName);
+      });
+      document.querySelectorAll(".tab-panel").forEach((p) => {
+        p.classList.toggle("active", p.id === `tab-${tabName}`);
+      });
+
+      if (tabName === "history") loadHistory();
+      if (tabName === "stats") loadStats();
+    }
+
+    /* =====================================================================
+     * GAME LIFECYCLE
+     * ===================================================================== */
+    async function checkForActiveGameOnLoad() {
+      try {
+        const res = await fetch("/api/games");
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.games)) return;
+
+        const active = data.games.find((g) => g.status === "active");
+        if (active) {
+          detectedActiveGameId = active.id;
+          const btn = document.getElementById("resumeGameBtn");
+          btn.textContent = `ادامه بازی «${active.title}» (${toFaNum(active.players.length)} بازیکن)`;
+          btn.classList.remove("hidden");
         }
+      } catch {
+        // silent on load
       }
+    }
 
-      function escapeHtml(str) {
-        return String(str || '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;');
-      }
+    async function resumeExistingActiveGame() {
+      if (!detectedActiveGameId) return;
+      await loadActiveGame(detectedActiveGameId);
+    }
 
-      function showToast(msg, type = 'info') {
-        const container = document.getElementById('toastContainer');
-        const el = document.createElement('div');
-        const palette = {
-          success: 'bg-emerald-600 text-white',
-          error: 'bg-rose-600 text-white',
-          warning: 'bg-amber-600 text-white',
-          info: 'bg-indigo-600 text-white',
-        };
-        el.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold transition ${palette[type] || palette.info}`;
-        el.textContent = msg;
-        container.appendChild(el);
-        setTimeout(() => {
-          el.classList.add('opacity-0');
-          setTimeout(() => el.remove(), 250);
-        }, 3400);
-      }
+    function openWelcomeModal() {
+      openModal("welcomeModal");
+    }
 
-      async function apiCall(path, options = {}) {
-        const res = await fetch(path, {
-          headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-          ...options,
+    async function createGameAndAskPlayers() {
+      const btn = document.getElementById("confirmStartGameBtn");
+      const title = document.getElementById("newGameTitleInput").value.trim() || "بازی دورهمی";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("/api/games/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
         });
         const data = await res.json();
-        if (!res.ok || data.ok === false) {
-          throw new Error(data.error || `HTTP ${res.status}`);
-        }
-        return data;
+        if (!data.ok) throw new Error(data.error || "خطا در ساخت بازی");
+
+        currentGame = {
+          id: data.game.id,
+          title: data.game.title,
+          players: [],
+          scores: {},
+          logs: [],
+        };
+
+        closeModal("welcomeModal");
+        document.getElementById("playersRawInput").value = "";
+        openModal("playersModal");
+      } catch (err) {
+        alert("خطا: " + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function togglePlayersMic() {
+      if (!SpeechRec) {
+        alert("این مرورگر از تشخیص گفتار پشتیبانی نمی‌کند. لطفاً اسامی را تایپ کنید.");
+        return;
+      }
+      if (isPlayersMicActive) {
+        stopPlayersMic();
+        return;
       }
 
-      /* -------------------------------------------------------------------
-       * HEALTH CHECK
-       * ------------------------------------------------------------------- */
-      async function checkHealth() {
-        try {
-          const data = await apiCall('/api/health');
-          dbStatusBadge.innerHTML = data.db_connected
-            ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>D1 متصل</span>'
-            : '<span class="w-2 h-2 rounded-full bg-rose-400"></span><span>D1 قطع</span>';
+      playersRecognition = new SpeechRec();
+      playersRecognition.lang = "fa-IR";
+      playersRecognition.continuous = true;
+      playersRecognition.interimResults = true;
 
-          const cloudText = data.cloud_api_provider ? data.cloud_api_provider : 'خاموش';
-          const cfAiText = data.workers_ai_connected ? 'فعال' : 'غیرفعال';
-          aiStatusBadge.textContent = `API: ${cloudText} | Workers AI: ${cfAiText}`;
-        } catch {
-          dbStatusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>خطا در اتصال سرور</span>';
-        }
-      }
+      const textarea = document.getElementById("playersRawInput");
+      let finalAccum = textarea.value ? textarea.value + " " : "";
 
-      /* -------------------------------------------------------------------
-       * CONTINUOUS SPEECH RECOGNITION FOR LIVE GAMEPLAY
-       * ------------------------------------------------------------------- */
-      function initSpeechEngines() {
-        if (!SpeechRecognition) {
-          speechWarning.classList.remove('hidden');
-          return;
-        }
+      playersRecognition.onstart = () => {
+        isPlayersMicActive = true;
+        document.getElementById("playersMicBtn").classList.add("recording");
+        document.getElementById("playersMicLabel").textContent = "در حال گوش دادن... (توقف)";
+      };
 
-        // Engine 1: Continuous Gameplay Listener
-        liveRec = new SpeechRecognition();
-        liveRec.lang = 'fa-IR';
-        liveRec.continuous = true;
-        liveRec.interimResults = true;
-
-        liveRec.onstart = () => {
-          isLiveRecActive = true;
-          updateLiveMicVisual(true);
-        };
-
-        liveRec.onresult = (event) => {
-          let interim = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const text = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              const cleaned = text.trim();
-              if (cleaned) {
-                liveHeardText.textContent = cleaned;
-                sendUtterance(cleaned);
-              }
-            } else {
-              interim += text;
-            }
-          }
-          if (interim.trim()) {
-            liveHeardText.textContent = interim.trim();
-          }
-        };
-
-        liveRec.onerror = (event) => {
-          if (event.error === 'no-speech') return;
-          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-            shouldKeepListening = false;
-            updateLiveMicVisual(false);
-            showToast('اجازه دسترسی به میکروفون داده نشد.', 'error');
-          }
-        };
-
-        liveRec.onend = () => {
-          isLiveRecActive = false;
-          if (shouldKeepListening && currentGameStatus === 'active') {
-            setTimeout(() => {
-              if (shouldKeepListening && !isLiveRecActive) {
-                try {
-                  liveRec.start();
-                } catch {}
-              }
-            }, 180);
+      playersRecognition.onresult = (event) => {
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalAccum += t.trim() + " ";
           } else {
-            updateLiveMicVisual(false);
+            interim += t;
           }
-        };
+        }
+        textarea.value = (finalAccum + interim).trim();
+      };
 
-        // Engine 2: Participant Names Modal Listener
-        playersRec = new SpeechRecognition();
-        playersRec.lang = 'fa-IR';
-        playersRec.continuous = true;
-        playersRec.interimResults = true;
+      playersRecognition.onerror = () => stopPlayersMic();
+      playersRecognition.onend = () => stopPlayersMic();
+      playersRecognition.start();
+    }
 
-        playersRec.onstart = () => {
-          isPlayersRecActive = true;
-          playersMicBtn.textContent = 'توقف ضبط اسامی';
-          playersMicStatus.textContent = 'در حال گوش دادن به نام شرکت‌کننده‌ها...';
-        };
+    function stopPlayersMic() {
+      isPlayersMicActive = false;
+      if (playersRecognition) {
+        try { playersRecognition.stop(); } catch {}
+        playersRecognition = null;
+      }
+      document.getElementById("playersMicBtn").classList.remove("recording");
+      document.getElementById("playersMicLabel").textContent = "ضبط صوتی اسامی";
+    }
 
-        playersRec.onresult = (event) => {
-          let finalChunk = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            if (event.results[i].isFinal) {
-              finalChunk += ' ' + event.results[i][0].transcript.trim();
-            }
-          }
-          if (finalChunk.trim()) {
-            playersRawInput.value = (playersRawInput.value + ' ' + finalChunk.trim()).trim();
-          }
-        };
+    function cancelPlayersRegistration() {
+      stopPlayersMic();
+      closeModal("playersModal");
+      currentGame = null;
+    }
 
-        playersRec.onend = () => {
-          isPlayersRecActive = false;
-          playersMicBtn.textContent = 'شروع ضبط اسامی';
-          playersMicStatus.textContent = 'ضبط متوقف شد. متن را بررسی کن و دکمه تأیید را بزن.';
-        };
+    async function submitPlayerNames() {
+      stopPlayersMic();
+      const rawText = document.getElementById("playersRawInput").value.trim();
+      if (!rawText) {
+        alert("لطفاً اسامی بازیکنان را بگویید یا بنویسید.");
+        return;
       }
 
-      function startLiveMic() {
-        if (!liveRec) return;
-        shouldKeepListening = true;
-        if (!isLiveRecActive) {
-          try {
-            liveRec.start();
-          } catch {}
-        }
-        updateLiveMicVisual(true);
-      }
+      const btn = document.getElementById("submitPlayersBtn");
+      btn.disabled = true;
+      btn.textContent = "در حال ثبت اسامی...";
 
-      function stopLiveMic() {
-        shouldKeepListening = false;
-        if (liveRec && isLiveRecActive) {
-          try {
-            liveRec.stop();
-          } catch {}
-        }
-        updateLiveMicVisual(false);
-      }
-
-      function updateLiveMicVisual(active) {
-        if (active) {
-          liveMicPulse.classList.remove('hidden');
-          toggleLiveMicBtn.classList.remove('bg-slate-700');
-          toggleLiveMicBtn.classList.add('bg-rose-600');
-          micLiveStatusLabel.textContent = 'در حال گوش دادن پیوسته تا اتمام بازی...';
-          micLiveStatusLabel.className = 'text-[11px] font-bold text-rose-400 block';
-        } else {
-          liveMicPulse.classList.add('hidden');
-          toggleLiveMicBtn.classList.remove('bg-rose-600');
-          toggleLiveMicBtn.classList.add('bg-slate-700');
-          micLiveStatusLabel.textContent = 'میکروفون متوقف است (برای ادامه کلیک کن)';
-          micLiveStatusLabel.className = 'text-[11px] font-bold text-slate-400 block';
-        }
-      }
-
-      /* -------------------------------------------------------------------
-       * GAME FLOW ACTIONS (START -> ALERTS -> PLAYERS -> UTTERANCE -> END)
-       * ------------------------------------------------------------------- */
-      async function handleStartGame() {
-        const title = gameTitleInput.value.trim() || 'بازی دورهمی';
-        startGameBtn.disabled = true;
-        try {
-          const res = await apiCall('/api/games/start', {
-            method: 'POST',
-            body: JSON.stringify({ title }),
-          });
-          currentGameId = res.game.id;
-          currentGameTitle = res.game.title;
-          currentGameStatus = 'registering_players';
-          sessionStorage.setItem('voxscore_active_game_id', currentGameId);
-
-          welcomeModalText.textContent = `بازی «${currentGameTitle}» با موفقیت در دیتابیس کلودفلر ایجاد شد. در قدم بعدی اسم شرکت‌کننده‌ها را اعلام کنید تا هوش مصنوعی آن‌ها را ثبت کند.`;
-          welcomeModal.classList.remove('hidden');
-        } catch (err) {
-          showToast('خطا در شروع بازی: ' + err.message, 'error');
-        } finally {
-          startGameBtn.disabled = false;
-        }
-      }
-
-      async function handleConfirmPlayers() {
-        const rawText = playersRawInput.value.trim();
-        if (!rawText) {
-          showToast('لطفاً ابتدا اسم شرکت‌کننده‌ها را بگویید یا بنویسید.', 'warning');
-          return;
-        }
-
-        if (playersRec && isPlayersRecActive) {
-          try { playersRec.stop(); } catch {}
-        }
-
-        confirmPlayersBtn.disabled = true;
-        confirmPlayersBtn.textContent = 'در حال استخراج اسامی با هوش مصنوعی...';
-
-        try {
-          const res = await apiCall(`/api/games/${encodeURIComponent(currentGameId)}/players`, {
-            method: 'POST',
-            body: JSON.stringify({ raw_text: rawText }),
-          });
-
-          players = res.players || [];
-          scores = res.scores || {};
-          currentGameStatus = 'active';
-          playersModal.classList.add('hidden');
-          playersRawInput.value = '';
-
-          showToast(`اسامی ثبت شد: ${players.join('، ')}`, 'success');
-          await syncCurrentGame();
-          startLiveMic();
-        } catch (err) {
-          showToast('خطا در ثبت اسامی: ' + err.message, 'error');
-        } finally {
-          confirmPlayersBtn.disabled = false;
-          confirmPlayersBtn.textContent = 'تأیید و استخراج اسامی با هوش مصنوعی';
-        }
-      }
-
-      async function sendUtterance(rawText) {
-        if (!currentGameId || currentGameStatus !== 'active' || !rawText.trim()) return;
-
-        try {
-          const res = await apiCall(`/api/games/${encodeURIComponent(currentGameId)}/utterance`, {
-            method: 'POST',
-            body: JSON.stringify({ raw_text: rawText.trim() }),
-          });
-
-          if (res.scores) scores = res.scores;
-
-          if (res.is_undo) {
-            showToast(res.undo_result?.ok ? 'آخرین امتیاز با فرمان صوتی برگردانده شد.' : 'امتیازی برای بازگشت نبود.', 'warning');
-          } else if (res.processed_by === 'regex') {
-            showToast('با Regex (۰ توکن) پردازش و ثبت شد', 'success');
-          } else if (res.processed_by === 'cloud_api') {
-            showToast('با Cloud API پردازش و ثبت شد', 'info');
-          } else if (res.processed_by === 'cloudflare_ai') {
-            showToast('با Cloudflare Workers AI پردازش و ثبت شد', 'info');
-          } else {
-            showToast('متن در D1 ذخیره شد (لایه AI در دسترس نبود)', 'warning');
-          }
-
-          await syncCurrentGame();
-        } catch (err) {
-          showToast('خطا در ارسال متن: ' + err.message, 'error');
-        }
-      }
-
-      async function handleManualDelta(player, delta) {
-        if (!currentGameId || currentGameStatus !== 'active') return;
-        try {
-          const res = await apiCall(`/api/games/${encodeURIComponent(currentGameId)}/manual-score`, {
-            method: 'POST',
-            body: JSON.stringify({ player, delta }),
-          });
-          if (res.scores) scores = res.scores;
-          await syncCurrentGame();
-        } catch (err) {
-          showToast('خطا در تغییر امتیاز: ' + err.message, 'error');
-        }
-      }
-
-      async function handleUndo() {
-        if (!currentGameId || currentGameStatus !== 'active') return;
-        try {
-          const res = await apiCall(`/api/games/${encodeURIComponent(currentGameId)}/undo`, {
-            method: 'POST',
-            body: JSON.stringify({}),
-          });
-          if (res.scores) scores = res.scores;
-          showToast('آخرین تغییر امتیاز بازگردانده شد.', 'warning');
-          await syncCurrentGame();
-        } catch (err) {
-          showToast(err.message, 'warning');
-        }
-      }
-
-      async function handleEndGame() {
-        if (!currentGameId) return;
-        stopLiveMic();
-        endGameBtn.disabled = true;
-
-        try {
-          const res = await apiCall(`/api/games/${encodeURIComponent(currentGameId)}/end`, {
-            method: 'POST',
-            body: JSON.stringify({}),
-          });
-
-          currentGameStatus = 'idle';
-          sessionStorage.removeItem('voxscore_active_game_id');
-
-          endSummaryHeadline.textContent = res.summary_text || 'بازی با موفقیت ذخیره شد.';
-          const ranked = Object.entries(res.scores || {}).sort((a, b) => b[1] - a[1]);
-          endSummaryScores.innerHTML = ranked
-            .map(
-              ([name, sc], idx) => `
-              <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                <span class="text-sm font-bold text-white">${formatFa(idx + 1)}. ${escapeHtml(name)}</span>
-                <span class="text-base font-extrabold text-amber-400">${formatFa(sc)}</span>
-              </div>`
-            )
-            .join('');
-
-          if (res.unprocessed_count > 0) {
-            endSummaryWarning.textContent = `توجه: ${formatFa(res.unprocessed_count)} جمله به دلیل متصل نبودن لایه AI بدون امتیازدهی در D1 ثبت شدند.`;
-            endSummaryWarning.classList.remove('hidden');
-          } else {
-            endSummaryWarning.classList.add('hidden');
-          }
-
-          endSummaryModal.classList.remove('hidden');
-
-          currentGameId = null;
-          players = [];
-          scores = {};
-          liveLogs = [];
-          renderLiveWorkspace();
-          loadArchive();
-          loadStats();
-        } catch (err) {
-          showToast('خطا در پایان بازی: ' + err.message, 'error');
-        } finally {
-          endGameBtn.disabled = false;
-        }
-      }
-
-      async function syncCurrentGame() {
-        if (!currentGameId) {
-          renderLiveWorkspace();
-          return;
-        }
-        try {
-          const data = await apiCall(`/api/games/${encodeURIComponent(currentGameId)}`);
-          currentGameTitle = data.title || 'بازی دورهمی';
-          currentGameStatus = data.status;
-          players = data.players || [];
-          scores = data.scores || {};
-          liveLogs = data.logs || [];
-
-          if (currentGameStatus === 'finished') {
-            sessionStorage.removeItem('voxscore_active_game_id');
-            currentGameId = null;
-            currentGameStatus = 'idle';
-            players = [];
-            scores = {};
-            liveLogs = [];
-          }
-          renderLiveWorkspace();
-        } catch {
-          sessionStorage.removeItem('voxscore_active_game_id');
-          currentGameId = null;
-          currentGameStatus = 'idle';
-          renderLiveWorkspace();
-        }
-      }
-
-      /* -------------------------------------------------------------------
-       * RENDER LIVE WORKSPACE
-       * ------------------------------------------------------------------- */
-      function renderLiveWorkspace() {
-        const isActive = currentGameStatus === 'active' && Boolean(currentGameId);
-
-        startGameBtn.disabled = isActive;
-        endGameBtn.disabled = !isActive;
-        preGameTitleRow.classList.toggle('hidden', isActive);
-        activeVoiceConsole.classList.toggle('hidden', !isActive);
-
-        if (isActive) {
-          gameStateDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
-          gameStateTitle.textContent = `در حال اجرای بازی: ${currentGameTitle}`;
-          gameStateSubtitle.textContent = `شناسه: ${currentGameId} — تمام جملات در D1 ثبت می‌شوند.`;
-        } else {
-          gameStateDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-500';
-          gameStateTitle.textContent = 'آماده برای شروع بازی جدید';
-          gameStateSubtitle.textContent = 'روی «شروع بازی» بزن تا پس از خوش‌آمدگویی، اسامی شرکت‌کننده‌ها را صوتی اعلام کنی.';
-        }
-
-        // Quick Test Chips using real player names
-        if (isActive && players.length > 0) {
-          const p1 = players[0];
-          const p2 = players[1] || players[0];
-          const chips = [
-            `${p1} ۲۰ امتیاز گرفت`,
-            `از ${p2} ۵ تا کم کن`,
-            `نصف امتیاز ${p1} رو بده به ${p2}`,
-            'قبلی رو برگردون',
-          ];
-          quickChipsRow.innerHTML =
-            '<span class="text-slate-400 ml-1">تست سریع:</span>' +
-            chips
-              .map(
-                (c) =>
-                  `<button type="button" data-quick-cmd="${escapeHtml(c)}" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-200 transition">${escapeHtml(c)}</button>`
-              )
-              .join('');
-        } else {
-          quickChipsRow.innerHTML = '';
-        }
-
-        // 3-Tier Counters
-        const regexCount = liveLogs.filter((l) => l.processed_by === 'regex').length;
-        const apiCount = liveLogs.filter((l) => l.processed_by === 'cloud_api').length;
-        const cfAiCount = liveLogs.filter((l) => l.processed_by === 'cloudflare_ai').length;
-        document.getElementById('statRegexCount').textContent = formatFa(regexCount);
-        document.getElementById('statApiCount').textContent = formatFa(apiCount);
-        document.getElementById('statCfAiCount').textContent = formatFa(cfAiCount);
-
-        // Scoreboard
-        document.getElementById('activePlayersCountBadge').textContent = `${formatFa(players.length)} شرکت‌کننده`;
-        if (!isActive || players.length === 0) {
-          scoreboardGrid.innerHTML = `
-            <div class="sm:col-span-2 rounded-2xl border border-dashed border-slate-700 p-8 text-center text-xs text-slate-400">
-              پس از زدن «شروع بازی» و معرفی شرکت‌کننده‌ها، کارت امتیاز بازیکنان اینجا ظاهر می‌شود.
-            </div>`;
-        } else {
-          const sorted = [...players]
-            .map((name) => ({ name, score: Number(scores[name]) || 0 }))
-            .sort((a, b) => b.score - a.score);
-          const topScore = sorted[0].score;
-
-          scoreboardGrid.innerHTML = sorted
-            .map((p, idx) => {
-              const isLeader = p.score === topScore && p.score > 0;
-              return `
-                <div class="rounded-2xl p-4 border ${isLeader ? 'bg-indigo-950/40 border-indigo-500/50' : 'bg-slate-950/70 border-slate-800'} flex flex-col justify-between gap-3">
-                  <div class="flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <span class="w-7 h-7 rounded-lg ${isLeader ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'} text-xs font-extrabold flex items-center justify-center shrink-0">${formatFa(idx + 1)}</span>
-                      <span class="font-bold text-white truncate">${escapeHtml(p.name)}</span>
-                    </div>
-                    ${isLeader ? '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">پیشتاز</span>' : ''}
-                  </div>
-                  <div class="flex items-end justify-between gap-2">
-                    <span class="text-3xl font-extrabold text-white">${formatFa(p.score)}</span>
-                    <div class="flex items-center gap-1">
-                      <button type="button" data-delta="-5" data-player="${escapeHtml(p.name)}" class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs font-bold">-۵</button>
-                      <button type="button" data-delta="5" data-player="${escapeHtml(p.name)}" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-xs font-bold">+۵</button>
-                      <button type="button" data-delta="10" data-player="${escapeHtml(p.name)}" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs font-bold">+۱۰</button>
-                    </div>
-                  </div>
-                </div>`;
-            })
-            .join('');
-        }
-
-        // Live Logs Feed
-        document.getElementById('activeLogsCountBadge').textContent = `${formatFa(liveLogs.length)} پیام`;
-        if (liveLogs.length === 0) {
-          liveLogsList.innerHTML = `<p class="text-xs text-slate-500 text-center py-10">هنوز جمله‌ای در این بازی ثبت نشده است.</p>`;
-        } else {
-          liveLogsList.innerHTML = liveLogs.map(renderLogRowHtml).join('');
-        }
-      }
-
-      function renderLogRowHtml(item) {
-        let badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300">ثبت‌شده</span>';
-        if (item.status === 'reverted') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300">برگردانده شد</span>';
-        } else if (item.processed_by === 'regex') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300">Regex (۰ توکن)</span>';
-        } else if (item.processed_by === 'cloud_api') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-300">Cloud API</span>';
-        } else if (item.processed_by === 'cloudflare_ai') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/15 text-violet-300">Cloudflare AI</span>';
-        } else if (item.processed_by === 'manual') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-700 text-slate-200">دستی</span>';
-        } else if (item.processed_by === 'heuristic_fallback') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300">استخراج پایه</span>';
-        } else if (item.status === 'unprocessed') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300">بدون پردازش AI</span>';
-        }
-
-        let actionSummary = '';
-        try {
-          const parsed = JSON.parse(item.parsed_json || '{}');
-          if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
-            actionSummary = parsed.actions
-              .map((a) => {
-                const sign = a.operation === 'SUBTRACT' ? '-' : a.operation === 'SET' ? '=' : '+';
-                return `${escapeHtml(a.player)} ${sign}${formatFa(a.value)}`;
-              })
-              .join(' | ');
-          } else if (Array.isArray(parsed.players)) {
-            actionSummary = `اسامی: ${parsed.players.map(escapeHtml).join('، ')}`;
-          }
-        } catch {}
-
-        const revertedClass = item.status === 'reverted' ? 'opacity-45 line-through' : '';
-
-        return `
-          <div class="py-2.5 space-y-1 ${revertedClass}">
-            <div class="flex items-center justify-between gap-2">
-              ${badge}
-              <span class="text-[10px] text-slate-500">${formatDateFa(item.created_at)}</span>
-            </div>
-            <p class="text-xs sm:text-sm text-slate-200 leading-relaxed">«${escapeHtml(item.raw_text)}»</p>
-            ${actionSummary ? `<p class="text-[11px] font-bold text-indigo-300">${actionSummary}</p>` : ''}
-          </div>`;
-      }
-
-      /* -------------------------------------------------------------------
-       * ARCHIVE TAB (ALL GAMES FROM D1)
-       * ------------------------------------------------------------------- */
-      async function loadArchive() {
-        const listEl = document.getElementById('archiveGamesList');
-        try {
-          const data = await apiCall('/api/games');
-          archiveGamesCache = data.games || [];
-          renderArchiveList();
-        } catch (err) {
-          listEl.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">خطا در بارگذاری آرشیو: ${escapeHtml(err.message)}</p>`;
-        }
-      }
-
-      function renderArchiveList() {
-        const listEl = document.getElementById('archiveGamesList');
-        const q = (document.getElementById('archiveSearchInput').value || '').trim().toLowerCase();
-
-        const filtered = archiveGamesCache.filter((g) => {
-          if (!q) return true;
-          const hay = `${g.title} ${g.id} ${(g.players || []).join(' ')} ${(g.winners || []).join(' ')}`.toLowerCase();
-          return hay.includes(q);
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(currentGame.id)}/players`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ raw_text: rawText }),
         });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا در ثبت اسامی");
 
-        if (filtered.length === 0) {
-          listEl.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">هیچ بازی ذخیره‌شده‌ای پیدا نشد.</p>`;
+        closeModal("playersModal");
+        await loadActiveGame(currentGame.id);
+
+        if (SpeechRec) {
+          startLiveMic();
+        }
+      } catch (err) {
+        alert("خطا: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "تأیید و شروع بازی";
+      }
+    }
+
+    async function loadActiveGame(gameId) {
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(gameId)}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "بازی پیدا نشد");
+
+        currentGame = {
+          id: data.game_id,
+          title: data.title,
+          players: data.players || [],
+          scores: data.scores || {},
+          logs: data.logs || [],
+        };
+
+        document.getElementById("idleView").classList.add("hidden");
+        document.getElementById("activeView").classList.remove("hidden");
+        document.getElementById("activeGameTitle").textContent = currentGame.title;
+        document.getElementById("activeGameSubtitle").textContent =
+          `${toFaNum(currentGame.players.length)} بازیکن فعال`;
+
+        if (!SpeechRec) {
+          document.getElementById("speechWarning").classList.remove("hidden");
+        }
+
+        renderScoreboard();
+        renderLiveLogs();
+      } catch (err) {
+        showToast("خطا در بارگذاری بازی");
+      }
+    }
+
+    async function endCurrentGame() {
+      if (!currentGame) return;
+      if (!confirm("بازی به پایان برسد و نتیجه در سابقه ثبت شود؟")) return;
+
+      stopLiveMic();
+      clearTimeout(bufferTimer);
+      speechBuffer = [];
+      utteranceQueue.length = 0;
+
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(currentGame.id)}/end`, {
+          method: "POST",
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا در اتمام بازی");
+
+        document.getElementById("winnerSummaryText").textContent = data.summary_text || "";
+        const scoresEl = document.getElementById("winnerScoresList");
+        const winners = data.winners || [];
+        scoresEl.innerHTML = Object.entries(data.scores || {})
+          .sort((a, b) => Number(b[1]) - Number(a[1]))
+          .map(([name, sc]) => {
+            const isWin = winners.includes(name);
+            return `<span class="score-chip ${isWin ? "winner" : ""}">${isWin ? "🏆 " : ""}${escapeHtml(name)}: <strong>${toFaNum(sc)}</strong></span>`;
+          })
+          .join("");
+
+        currentGame = null;
+        detectedActiveGameId = null;
+        document.getElementById("resumeGameBtn").classList.add("hidden");
+        document.getElementById("activeView").classList.add("hidden");
+        document.getElementById("idleView").classList.remove("hidden");
+
+        openModal("winnerModal");
+      } catch (err) {
+        alert("خطا در پایان بازی: " + err.message);
+      }
+    }
+
+    function closeWinnerAndShowHistory() {
+      closeModal("winnerModal");
+      switchTab("history");
+    }
+
+    /* =====================================================================
+     * LIVE SPEECH RECOGNITION + DEBOUNCE BUFFER + SEQUENTIAL QUEUE
+     * ===================================================================== */
+    function updateBufferDisplay() {
+      const el = document.getElementById("liveTranscriptDisplay");
+      const flushBtn = document.getElementById("flushBufferBtn");
+      const combined = [...speechBuffer, interimText].filter(Boolean).join(" ، ");
+
+      if (combined) {
+        el.innerHTML = `<span style="color:var(--text-strong);">«${escapeHtml(combined)}»</span>`;
+        flushBtn.classList.toggle("hidden", speechBuffer.length === 0);
+      } else {
+        el.textContent = isLiveMicActive
+          ? "گوش به زنگم... صحبت کنید تا امتیازها به‌صورت خودکار ثبت شوند."
+          : "میکروفون خاموش است. برای شروع دکمه میکروفون را بزنید یا از کادر پایین بنویسید.";
+        flushBtn.classList.add("hidden");
+      }
+    }
+
+    function updateSavingIndicator() {
+      const el = document.getElementById("savingStatus");
+      const busy = isProcessingQueue || utteranceQueue.length > 0;
+      el.classList.toggle("hidden", !busy);
+    }
+
+    function queueSpokenChunk(finalText) {
+      const clean = (finalText || "").trim();
+      if (!clean) return;
+
+      speechBuffer.push(clean);
+      interimText = "";
+      updateBufferDisplay();
+
+      clearTimeout(bufferTimer);
+      bufferTimer = setTimeout(() => {
+        flushSpeechBufferNow();
+      }, BUFFER_DELAY_MS);
+    }
+
+    function flushSpeechBufferNow() {
+      clearTimeout(bufferTimer);
+      if (speechBuffer.length === 0) return;
+
+      const mergedText = speechBuffer.join(" ، ");
+      speechBuffer = [];
+      interimText = "";
+      updateBufferDisplay();
+
+      enqueueUtterance(mergedText);
+    }
+
+    function enqueueUtterance(text) {
+      if (!currentGame || !text.trim()) return;
+      utteranceQueue.push(text.trim());
+      updateSavingIndicator();
+      drainUtteranceQueue();
+    }
+
+    async function drainUtteranceQueue() {
+      if (isProcessingQueue || utteranceQueue.length === 0) return;
+      isProcessingQueue = true;
+      updateSavingIndicator();
+
+      while (utteranceQueue.length > 0 && currentGame) {
+        const nextText = utteranceQueue.shift();
+        try {
+          await sendUtteranceToServer(nextText);
+        } catch {
+          showToast("خطا در ثبت پیام؛ لطفاً دوباره تلاش کنید.");
+        }
+      }
+
+      isProcessingQueue = false;
+      updateSavingIndicator();
+    }
+
+    async function sendUtteranceToServer(rawText) {
+      if (!currentGame) return;
+
+      const res = await fetch(`/api/games/${encodeURIComponent(currentGame.id)}/utterance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raw_text: rawText }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "خطای سرور");
+
+      if (data.is_undo && !data.undo_result?.ok) {
+        showToast(data.undo_result?.error || "تغییری برای بازگشت وجود نداشت.");
+      }
+
+      await loadActiveGame(currentGame.id);
+    }
+
+    function handleManualCommandSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById("manualCmdInput");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      enqueueUtterance(text);
+    }
+
+    function toggleLiveMic() {
+      if (isLiveMicActive) stopLiveMic();
+      else startLiveMic();
+    }
+
+    function startLiveMic() {
+      if (!SpeechRec) {
+        showToast("مرورگر شما از میکروفون وب پشتیبانی نمی‌کند.");
+        return;
+      }
+      if (isLiveMicActive) return;
+
+      liveRecognition = new SpeechRec();
+      liveRecognition.lang = "fa-IR";
+      liveRecognition.continuous = true;
+      liveRecognition.interimResults = true;
+
+      liveRecognition.onstart = () => {
+        isLiveMicActive = true;
+        document.getElementById("liveMicBtn").classList.add("recording");
+        document.getElementById("liveMicLabel").textContent = "در حال شنیدن زنده (توقف)";
+        updateBufferDisplay();
+      };
+
+      liveRecognition.onresult = (event) => {
+        let localInterim = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            queueSpokenChunk(transcript);
+          } else {
+            localInterim += transcript;
+          }
+        }
+        interimText = localInterim.trim();
+        updateBufferDisplay();
+      };
+
+      liveRecognition.onerror = (event) => {
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          showToast("دسترسی میکروفون مسدود است.");
+          stopLiveMic();
+        }
+      };
+
+      liveRecognition.onend = () => {
+        if (isLiveMicActive && currentGame) {
+          try {
+            liveRecognition.start();
+          } catch {
+            stopLiveMic();
+          }
+        }
+      };
+
+      try {
+        liveRecognition.start();
+      } catch {
+        showToast("امکان فعال‌سازی میکروفون وجود نداشت.");
+      }
+    }
+
+    function stopLiveMic() {
+      isLiveMicActive = false;
+      if (liveRecognition) {
+        try { liveRecognition.onend = null; liveRecognition.stop(); } catch {}
+        liveRecognition = null;
+      }
+      document.getElementById("liveMicBtn").classList.remove("recording");
+      document.getElementById("liveMicLabel").textContent = "شروع شنیدن زنده";
+      flushSpeechBufferNow();
+      updateBufferDisplay();
+    }
+
+    /* =====================================================================
+     * SCOREBOARD, MANUAL SCORE, UNDO & PLAYER MANAGEMENT
+     * ===================================================================== */
+    function renderScoreboard() {
+      if (!currentGame) return;
+      const grid = document.getElementById("playersGrid");
+      const players = currentGame.players || [];
+      const scores = currentGame.scores || {};
+
+      if (players.length === 0) {
+        grid.innerHTML = '<p style="color:var(--muted);">هیچ بازیکنی ثبت نشده است.</p>';
+        return;
+      }
+
+      const maxScore = Math.max(...players.map((p) => Number(scores[p]) || 0));
+
+      grid.innerHTML = players
+        .map((player, idx) => {
+          const sc = Number(scores[player]) || 0;
+          const isLeader = sc === maxScore && players.length > 1;
+          const safeName = escapeHtml(player);
+
+          return `
+            <div class="player-card ${isLeader ? "leader" : ""}">
+              <div class="player-head">
+                <div class="player-name">${isLeader ? "👑 " : ""}${safeName}</div>
+                <button type="button" class="btn btn-ghost btn-sm" style="padding:3px 8px;" onclick="quickRenameByIdx(${idx})" title="تغییر نام">✏️</button>
+              </div>
+              <div class="player-score">${toFaNum(sc)}</div>
+              <div class="quick-deltas">
+                <button type="button" class="delta-btn plus" onclick="manualScoreByIdx(${idx}, 1)">+۱</button>
+                <button type="button" class="delta-btn plus" onclick="manualScoreByIdx(${idx}, 5)">+۵</button>
+                <button type="button" class="delta-btn plus" onclick="manualScoreByIdx(${idx}, 10)">+۱۰</button>
+                <button type="button" class="delta-btn minus" onclick="manualScoreByIdx(${idx}, -5)">-۵</button>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    async function manualScoreByIdx(idx, delta) {
+      const player = currentGame?.players?.[idx];
+      if (!player) return;
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(currentGame.id)}/manual-score`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ player, delta }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا");
+        await loadActiveGame(currentGame.id);
+      } catch {
+        showToast("خطا در تغییر امتیاز");
+      }
+    }
+
+    async function undoLastAction() {
+      if (!currentGame) return;
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(currentGame.id)}/undo`, {
+          method: "POST",
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          showToast(data.error || "موردی برای بازگشت نیست.");
+          return;
+        }
+        await loadActiveGame(currentGame.id);
+      } catch {
+        showToast("خطا در بازگشت امتیاز");
+      }
+    }
+
+    async function quickRenameByIdx(idx) {
+      const oldName = currentGame?.players?.[idx];
+      if (!oldName) return;
+      const next = prompt(`نام جدید برای «${oldName}» را وارد کنید:`, oldName);
+      if (!next || next.trim() === oldName) return;
+      await patchPlayers({ action: "rename", old_name: oldName, new_name: next.trim() });
+    }
+
+    function openEditPlayersModal() {
+      if (!currentGame) return;
+      renderEditPlayersModalList();
+      document.getElementById("addPlayerNameInput").value = "";
+      openModal("editPlayersModal");
+    }
+
+    function renderEditPlayersModalList() {
+      const container = document.getElementById("editPlayersList");
+      const players = currentGame?.players || [];
+      if (players.length === 0) {
+        container.innerHTML = '<p style="color:var(--muted); font-size:0.86rem;">لیست بازیکنان خالی است.</p>';
+        return;
+      }
+
+      container.innerHTML = players
+        .map((p, idx) => {
+          const safe = escapeHtml(p);
+          return `
+            <div class="edit-player-row">
+              <input type="text" id="renameInput_${idx}" value="${safe}" />
+              <button type="button" class="btn btn-primary btn-sm" onclick="saveRenameByIdx(${idx})">ذخیره</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="removePlayerByIdx(${idx})">حذف</button>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    async function saveRenameByIdx(idx) {
+      const oldName = currentGame?.players?.[idx];
+      const newName = document.getElementById(`renameInput_${idx}`)?.value.trim();
+      if (!oldName || !newName || newName === oldName) return;
+      await patchPlayers({ action: "rename", old_name: oldName, new_name: newName });
+      renderEditPlayersModalList();
+    }
+
+    async function addPlayerManually() {
+      const input = document.getElementById("addPlayerNameInput");
+      const name = input.value.trim();
+      if (!name) return;
+      await patchPlayers({ action: "add", name });
+      input.value = "";
+      renderEditPlayersModalList();
+    }
+
+    async function removePlayerByIdx(idx) {
+      const name = currentGame?.players?.[idx];
+      if (!name) return;
+      if (!confirm(`بازیکن «${name}» و امتیازش از این بازی حذف شود؟`)) return;
+      await patchPlayers({ action: "remove", name });
+      renderEditPlayersModalList();
+    }
+
+    async function patchPlayers(payload) {
+      if (!currentGame) return;
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(currentGame.id)}/players`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا در ویرایش بازیکنان");
+        await loadActiveGame(currentGame.id);
+      } catch (err) {
+        alert("خطا: " + err.message);
+      }
+    }
+
+    /* =====================================================================
+     * CLEAN USER-FACING LOG RENDERING (NO AI / MODEL BADGES)
+     * ===================================================================== */
+    function renderLogCardHtml(log) {
+      let parsed = null;
+      try {
+        parsed = log.parsed_json ? JSON.parse(log.parsed_json) : null;
+      } catch {}
+
+      let statusTag = "";
+      if (log.status === "reverted") {
+        statusTag = '<span class="badge badge-danger">لغوشده</span>';
+      } else if (log.log_type === "manual" || log.log_type === "player_edit") {
+        statusTag = '<span class="badge badge-neutral">دستی</span>';
+      } else if (log.log_type === "players_init") {
+        statusTag = '<span class="badge badge-purple">شروع بازی</span>';
+      } else if (log.log_type === "undo") {
+        statusTag = '<span class="badge badge-warning">بازگشت</span>';
+      }
+
+      const tags = [];
+
+      if (parsed?.players && Array.isArray(parsed.players) && log.log_type === "players_init") {
+        tags.push(`<span class="badge badge-purple">بازیکنان: ${escapeHtml(parsed.players.join("، "))}</span>`);
+      }
+
+      if (Array.isArray(parsed?.player_changes)) {
+        for (const ch of parsed.player_changes) {
+          const t = String(ch.type || "").toUpperCase();
+          if (t === "RENAME") {
+            tags.push(`<span class="badge badge-purple">تغییر نام: ${escapeHtml(ch.old_name)} ← ${escapeHtml(ch.new_name)}</span>`);
+          } else if (t === "ADD") {
+            tags.push(`<span class="badge badge-purple">+ بازیکن جدید: ${escapeHtml(ch.name || ch.new_name)}</span>`);
+          } else if (t === "REMOVE") {
+            tags.push(`<span class="badge badge-danger">حذف بازیکن: ${escapeHtml(ch.name || ch.old_name)}</span>`);
+          }
+        }
+      }
+
+      if (Array.isArray(parsed?.actions)) {
+        for (const act of parsed.actions) {
+          const op = String(act.operation || "").toUpperCase();
+          const sym = op === "SUBTRACT" ? "-" : op === "SET" ? "=" : "+";
+          const cls = op === "SUBTRACT" ? "badge-danger" : "badge-success";
+          tags.push(`<span class="badge ${cls}">${escapeHtml(act.player)} ${sym}${toFaNum(act.value)}</span>`);
+        }
+      }
+
+      return `
+        <div class="log-item ${log.status === "reverted" ? "reverted" : ""}">
+          <div class="log-meta">
+            <div>${statusTag}</div>
+            <span>${formatTime(log.created_at)}</span>
+          </div>
+          <div class="log-text">«${escapeHtml(log.raw_text)}»</div>
+          ${tags.length ? `<div class="log-tags">${tags.join("")}</div>` : ""}
+        </div>
+      `;
+    }
+
+    function renderLiveLogs() {
+      const logs = currentGame?.logs || [];
+      document.getElementById("liveLogsCount").textContent = `${toFaNum(logs.length)} مورد`;
+
+      const listEl = document.getElementById("liveLogsList");
+      if (logs.length === 0) {
+        listEl.innerHTML = '<p style="color:var(--muted); text-align:center; padding:18px;">هنوز رویدادی ثبت نشده است.</p>';
+        return;
+      }
+      listEl.innerHTML = logs.map(renderLogCardHtml).join("");
+    }
+
+    /* =====================================================================
+     * HISTORY, BACKUP & ATOMIC RESET
+     * ===================================================================== */
+    async function loadHistory() {
+      const list = document.getElementById("historyList");
+      list.innerHTML = '<p style="color:var(--muted); text-align:center; padding:20px;">در حال بارگذاری...</p>';
+
+      try {
+        const res = await fetch("/api/games");
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا");
+
+        const games = data.games || [];
+        if (games.length === 0) {
+          list.innerHTML = '<p style="color:var(--muted); text-align:center; padding:28px;">هیچ بازی‌ای در سابقه ثبت نشده است.</p>';
           return;
         }
 
-        listEl.innerHTML = filtered
+        list.innerHTML = games
           .map((g) => {
-            const isFinished = g.status === 'finished';
-            const statusBadge = isFinished
-              ? '<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[11px] font-bold">پایان‌یافته</span>'
-              : '<span class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[11px] font-bold">در جریان</span>';
-
-            const scorePills = Object.entries(g.scores || {})
-              .sort((a, b) => b[1] - a[1])
-              .map(([name, sc]) => {
-                const isWin = isFinished && (g.winners || []).includes(name);
-                return `<span class="px-2.5 py-1 rounded-lg text-xs font-semibold ${isWin ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-300'}">${escapeHtml(name)}: ${formatFa(sc)}</span>`;
+            const winners = g.winners || [];
+            const chips = Object.entries(g.scores || {})
+              .sort((a, b) => Number(b[1]) - Number(a[1]))
+              .map(([n, sc]) => {
+                const isWin = g.status === "finished" && winners.includes(n);
+                return `<span class="score-chip ${isWin ? "winner" : ""}">${isWin ? "🏆 " : ""}${escapeHtml(n)}: <strong>${toFaNum(sc)}</strong></span>`;
               })
-              .join('');
+              .join("");
+
+            const statusBadge =
+              g.status === "finished"
+                ? '<span class="badge badge-success">پایان‌یافته</span>'
+                : g.status === "active"
+                ? '<span class="badge badge-warning">در حال اجرا</span>'
+                : '<span class="badge badge-neutral">ثبت اولیه</span>';
 
             return `
-              <div class="rounded-2xl bg-slate-950/75 border border-slate-800 p-4 space-y-3 hover:border-indigo-500/40 transition">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="text-sm sm:text-base font-bold text-white">${escapeHtml(g.title)}</h3>
-                      ${statusBadge}
-                    </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">${formatDateFa(g.created_at)} • ${formatFa(g.logs_count)} پیام صوتی</p>
+              <div class="history-card">
+                <div class="history-top">
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <strong style="color:var(--text-strong);">${escapeHtml(g.title)}</strong>
+                    ${statusBadge}
+                    <span style="font-size:0.78rem; color:var(--muted);">${formatTime(g.created_at, true)} • ${toFaNum(g.logs_count)} رویداد</span>
                   </div>
-                  <div class="flex items-center gap-1.5">
-                    ${
-                      !isFinished
-                        ? `<button type="button" data-resume-game="${escapeHtml(g.id)}" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">ادامه بازی</button>`
-                        : ''
-                    }
-                    <button type="button" data-inspect-game="${escapeHtml(g.id)}" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs font-bold transition">ریز مکالمات</button>
-                    <button type="button" data-delete-game="${escapeHtml(g.id)}" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs font-bold transition">حذف</button>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${g.status === "active" ? `<button type="button" class="btn btn-primary btn-sm" onclick="openActiveFromHistory('${escapeHtml(g.id)}')">ورود به بازی</button>` : ""}
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="inspectGameLogs('${escapeHtml(g.id)}')">ریز مکالمات</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteSingleGame('${escapeHtml(g.id)}')">حذف</button>
                   </div>
                 </div>
-                ${scorePills ? `<div class="flex flex-wrap gap-1.5">${scorePills}</div>` : ''}
-              </div>`;
+                ${g.summary_text ? `<div style="font-size:0.86rem; color:var(--muted);">${escapeHtml(g.summary_text)}</div>` : ""}
+                <div class="score-chips">${chips || '<span style="font-size:0.82rem; color:var(--muted);">بدون بازیکن</span>'}</div>
+              </div>
+            `;
           })
-          .join('');
+          .join("");
+      } catch (err) {
+        list.innerHTML = `<p style="color:var(--danger-text);">خطا در دریافت سابقه</p>`;
+      }
+    }
+
+    async function openActiveFromHistory(gameId) {
+      switchTab("live");
+      await loadActiveGame(gameId);
+    }
+
+    async function inspectGameLogs(gameId) {
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(gameId)}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا");
+
+        document.getElementById("detailModalTitle").textContent = `ریز مکالمات: ${data.title}`;
+        document.getElementById("detailModalSummary").textContent =
+          data.summary_text || `تعداد رویدادها: ${toFaNum((data.logs || []).length)}`;
+        document.getElementById("detailModalLogs").innerHTML =
+          (data.logs || []).length > 0
+            ? data.logs.map(renderLogCardHtml).join("")
+            : '<p style="color:var(--muted);">رویدادی ثبت نشده است.</p>';
+        openModal("gameDetailModal");
+      } catch (err) {
+        alert("خطا: " + err.message);
+      }
+    }
+
+    async function deleteSingleGame(gameId) {
+      if (!confirm("این بازی و تمام رویدادهای آن حذف شود؟")) return;
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(gameId)}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا");
+
+        if (currentGame && currentGame.id === gameId) {
+          stopLiveMic();
+          currentGame = null;
+          document.getElementById("activeView").classList.add("hidden");
+          document.getElementById("idleView").classList.remove("hidden");
+        }
+        loadHistory();
+      } catch (err) {
+        alert("خطا در حذف بازی: " + err.message);
+      }
+    }
+
+    async function exportHistoryBackup() {
+      try {
+        const res = await fetch("/api/games");
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا");
+
+        const blob = new Blob([JSON.stringify(data.games, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `bordban-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast("فایل بکاپ دانلود شد.");
+      } catch (err) {
+        alert("خطا در دانلود بکاپ: " + err.message);
+      }
+    }
+
+    async function resetAllHistory() {
+      const ok1 = confirm(
+        "همه بازی‌ها، امتیازها و آمار بازیکنان به‌صورت دائمی پاک می‌شوند. مطمئن هستید؟"
+      );
+      if (!ok1) return;
+
+      const typed = prompt("برای تأیید نهایی، کلمه «ریست» را بنویسید:");
+      if ((typed || "").trim() !== "ریست") {
+        showToast("عملیات لغو شد.");
+        return;
       }
 
-      async function inspectGameDetails(gameId) {
-        detailModalTitle.textContent = 'در حال بارگذاری...';
-        detailModalMeta.textContent = '';
-        detailModalBody.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">در حال خواندن مکالمات از D1...</p>';
-        gameDetailsModal.classList.remove('hidden');
+      try {
+        const res = await fetch("/api/games?confirm=true", { method: "DELETE" });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا در پاک‌سازی سابقه");
 
-        try {
-          const data = await apiCall(`/api/games/${encodeURIComponent(gameId)}`);
-          detailModalTitle.textContent = data.title || 'جزئیات بازی';
-          detailModalMeta.textContent = `شناسه: ${data.game_id} | ثبت‌شده در ${formatDateFa(data.created_at)}`;
+        stopLiveMic();
+        currentGame = null;
+        detectedActiveGameId = null;
+        document.getElementById("resumeGameBtn").classList.add("hidden");
+        document.getElementById("activeView").classList.add("hidden");
+        document.getElementById("idleView").classList.remove("hidden");
 
-          const scoresHtml = Object.entries(data.scores || {})
-            .sort((a, b) => b[1] - a[1])
-            .map(
-              ([n, s]) =>
-                `<span class="px-3 py-1 rounded-xl bg-slate-800 text-xs font-bold text-white">${escapeHtml(n)}: ${formatFa(s)}</span>`
-            )
-            .join('');
-
-          const logsHtml =
-            (data.logs || []).length > 0
-              ? data.logs.map(renderLogRowHtml).join('')
-              : '<p class="text-xs text-slate-500 text-center py-6">مکالمه‌ای برای این بازی ثبت نشده است.</p>';
-
-          detailModalBody.innerHTML = `
-            <div class="flex flex-wrap gap-2">${scoresHtml}</div>
-            <div class="divide-y divide-slate-800 border-t border-slate-800 pt-2">${logsHtml}</div>`;
-        } catch (err) {
-          detailModalBody.innerHTML = `<p class="text-xs text-rose-400">${escapeHtml(err.message)}</p>`;
-        }
+        showToast("سابقه بازی‌ها پاک‌سازی شد.");
+        await loadHistory();
+        await loadStats();
+      } catch (err) {
+        alert("خطا در پاک‌سازی سابقه: " + err.message);
       }
+    }
 
-      /* -------------------------------------------------------------------
-       * STATS & SMART Q&A TAB
-       * ------------------------------------------------------------------- */
-      async function loadStats() {
-        const grid = document.getElementById('statsPlayersGrid');
-        try {
-          const data = await apiCall('/api/stats');
-          document.getElementById('kpiTotalGames').textContent = formatFa(data.total_finished_games);
-          document.getElementById('kpiTotalLogs').textContent = formatFa(data.total_voice_logs);
+    /* =====================================================================
+     * STATS & Q&A
+     * ===================================================================== */
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/stats");
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا");
 
-          const list = data.players || [];
-          if (list.length === 0) {
-            grid.innerHTML = `<p class="text-xs text-slate-500 sm:col-span-2 lg:col-span-3 text-center py-6">با اتمام اولین بازی، پروفایل آماری بازیکنان اینجا ساخته می‌شود.</p>`;
-            return;
-          }
+        const players = data.players || [];
+        document.getElementById("statTotalGames").textContent = toFaNum(data.total_finished_games || 0);
+        document.getElementById("statTotalLogs").textContent = toFaNum(data.total_voice_logs || 0);
+        document.getElementById("statTotalPlayers").textContent = toFaNum(players.length);
 
-          grid.innerHTML = list
-            .map(
-              (p) => `
-              <div class="rounded-2xl bg-slate-950/75 border border-slate-800 p-4 space-y-3">
-                <div class="flex items-center justify-between">
-                  <span class="font-bold text-white">${escapeHtml(p.name)}</span>
-                  <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[11px] font-bold">نرخ برد ${formatFa(p.win_rate)}٪</span>
-                </div>
-                <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                  <div class="h-full bg-indigo-500 rounded-full" style="width: ${p.win_rate}%"></div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 text-center">
-                  <div class="rounded-xl bg-slate-900 p-2">
-                    <span class="text-[10px] text-slate-400 block">بازی</span>
-                    <span class="text-sm font-extrabold text-white">${formatFa(p.total_games)}</span>
-                  </div>
-                  <div class="rounded-xl bg-slate-900 p-2">
-                    <span class="text-[10px] text-slate-400 block">برد</span>
-                    <span class="text-sm font-extrabold text-indigo-400">${formatFa(p.total_wins)}</span>
-                  </div>
-                  <div class="rounded-xl bg-slate-900 p-2">
-                    <span class="text-[10px] text-slate-400 block">رکورد</span>
-                    <span class="text-sm font-extrabold text-amber-400">${formatFa(p.highest_score)}</span>
-                  </div>
-                </div>
-              </div>`
-            )
-            .join('');
-        } catch (err) {
-          grid.innerHTML = `<p class="text-xs text-rose-400 sm:col-span-2 lg:col-span-3 text-center py-6">خطا در دریافت آمار: ${escapeHtml(err.message)}</p>`;
-        }
-      }
-
-      async function askHistoryQuestion(question) {
-        const box = document.getElementById('askAnswerBox');
-        if (!question.trim()) return;
-        box.textContent = 'در حال تحلیل داده‌های دیتابیس D1...';
-        box.classList.remove('hidden');
-
-        try {
-          const res = await apiCall('/api/ask', {
-            method: 'POST',
-            body: JSON.stringify({ question: question.trim() }),
-          });
-          const tag =
-            res.answered_by === 'rules'
-              ? 'محاسبه دقیق دیتابیس'
-              : res.answered_by === 'cloud_api'
-              ? 'Cloud API'
-              : 'Cloudflare Workers AI';
-          box.innerHTML = `<div class="text-[11px] text-violet-300 font-bold mb-1">پاسخ (${tag}):</div><div>${escapeHtml(res.answer)}</div>`;
-        } catch (err) {
-          box.textContent = 'خطا در تحلیل سوال: ' + err.message;
-        }
-      }
-
-      /* -------------------------------------------------------------------
-       * TAB SWITCHING & EVENT LISTENERS
-       * ------------------------------------------------------------------- */
-      function switchTab(tabName) {
-        document.querySelectorAll('.tab-panel').forEach((p) => {
-          p.classList.toggle('hidden', p.id !== `tab-${tabName}`);
-        });
-        document.querySelectorAll('.tab-btn').forEach((btn) => {
-          const active = btn.dataset.tab === tabName;
-          btn.className = active
-            ? 'tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition bg-indigo-600 text-white shadow'
-            : 'tab-btn py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white';
-        });
-
-        if (tabName === 'archive') loadArchive();
-        if (tabName === 'stats') loadStats();
-      }
-
-      document.querySelectorAll('.tab-btn').forEach((btn) => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-      });
-
-      startGameBtn.addEventListener('click', handleStartGame);
-      endGameBtn.addEventListener('click', handleEndGame);
-      undoScoreBtn.addEventListener('click', handleUndo);
-
-      toggleLiveMicBtn.addEventListener('click', () => {
-        if (shouldKeepListening) stopLiveMic();
-        else startLiveMic();
-      });
-
-      welcomeNextBtn.addEventListener('click', () => {
-        welcomeModal.classList.add('hidden');
-        playersModal.classList.remove('hidden');
-      });
-
-      cancelPlayersModalBtn.addEventListener('click', () => {
-        if (playersRec && isPlayersRecActive) {
-          try { playersRec.stop(); } catch {}
-        }
-        playersModal.classList.add('hidden');
-      });
-
-      playersMicBtn.addEventListener('click', () => {
-        if (!playersRec) {
-          showToast('میکروفون در این مرورگر فعال نیست؛ اسامی را تایپ کنید.', 'warning');
-          return;
-        }
-        if (isPlayersRecActive) {
-          try { playersRec.stop(); } catch {}
-        } else {
-          try { playersRec.start(); } catch {}
-        }
-      });
-
-      confirmPlayersBtn.addEventListener('click', handleConfirmPlayers);
-
-      manualUtteranceForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const val = manualUtteranceInput.value.trim();
-        if (!val) return;
-        liveHeardText.textContent = val;
-        manualUtteranceInput.value = '';
-        sendUtterance(val);
-      });
-
-      quickChipsRow.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-quick-cmd]');
-        if (!btn) return;
-        const cmd = btn.dataset.quickCmd;
-        liveHeardText.textContent = cmd;
-        sendUtterance(cmd);
-      });
-
-      scoreboardGrid.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-delta]');
-        if (!btn) return;
-        handleManualDelta(btn.dataset.player, Number(btn.dataset.delta));
-      });
-
-      document.getElementById('closeEndSummaryBtn').addEventListener('click', () => {
-        endSummaryModal.classList.add('hidden');
-      });
-      document.getElementById('goToArchiveAfterEndBtn').addEventListener('click', () => {
-        endSummaryModal.classList.add('hidden');
-        switchTab('archive');
-      });
-
-      document.getElementById('archiveSearchInput').addEventListener('input', renderArchiveList);
-      document.getElementById('refreshArchiveBtn').addEventListener('click', loadArchive);
-      document.getElementById('refreshStatsBtn').addEventListener('click', loadStats);
-      document.getElementById('closeDetailModalBtn').addEventListener('click', () => {
-        gameDetailsModal.classList.add('hidden');
-      });
-
-      document.getElementById('archiveGamesList').addEventListener('click', async (e) => {
-        const inspectBtn = e.target.closest('[data-inspect-game]');
-        if (inspectBtn) {
-          inspectGameDetails(inspectBtn.dataset.inspectGame);
+        const tbody = document.getElementById("statsTableBody");
+        if (players.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted);">هنوز بازی پایان‌یافته‌ای ثبت نشده است.</td></tr>';
           return;
         }
 
-        const resumeBtn = e.target.closest('[data-resume-game]');
-        if (resumeBtn) {
-          currentGameId = resumeBtn.dataset.resumeGame;
-          sessionStorage.setItem('voxscore_active_game_id', currentGameId);
-          await syncCurrentGame();
-          switchTab('live');
-          showToast('بازی مجدداً بارگذاری شد.', 'info');
-          return;
-        }
+        tbody.innerHTML = players
+          .map(
+            (p, i) => `
+              <tr>
+                <td><strong style="color:var(--text-strong);">${i === 0 ? "🥇 " : ""}${escapeHtml(p.name)}</strong></td>
+                <td>${toFaNum(p.total_games)}</td>
+                <td>${toFaNum(p.total_wins)}</td>
+                <td>${toFaNum(p.win_rate)}٪</td>
+                <td>${toFaNum(p.avg_score)}</td>
+                <td>${toFaNum(p.highest_score)}</td>
+              </tr>
+            `
+          )
+          .join("");
+      } catch {
+        showToast("خطا در دریافت آمار");
+      }
+    }
 
-        const delBtn = e.target.closest('[data-delete-game]');
-        if (delBtn) {
-          const id = delBtn.dataset.deleteGame;
-          try {
-            await apiCall(`/api/games/${encodeURIComponent(id)}`, { method: 'DELETE' });
-            if (currentGameId === id) {
-              stopLiveMic();
-              currentGameId = null;
-              currentGameStatus = 'idle';
-              sessionStorage.removeItem('voxscore_active_game_id');
-              renderLiveWorkspace();
-            }
-            showToast('بازی از دیتابیس حذف شد.', 'info');
-            loadArchive();
-            loadStats();
-          } catch (err) {
-            showToast('خطا در حذف بازی: ' + err.message, 'error');
-          }
-        }
-      });
+    function askPreset(q) {
+      document.getElementById("askInput").value = q;
+      runAskQuestion(q);
+    }
 
-      document.getElementById('askHistoryForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        askHistoryQuestion(document.getElementById('askHistoryInput').value);
-      });
+    function handleAskSubmit(e) {
+      e.preventDefault();
+      const q = document.getElementById("askInput").value.trim();
+      if (!q) return;
+      runAskQuestion(q);
+    }
 
-      document.querySelectorAll('.ask-chip').forEach((chip) => {
-        chip.addEventListener('click', () => {
-          const q = chip.textContent.trim();
-          document.getElementById('askHistoryInput').value = q;
-          askHistoryQuestion(q);
+    async function runAskQuestion(question) {
+      const box = document.getElementById("askAnswerBox");
+      const btn = document.getElementById("askSubmitBtn");
+      btn.disabled = true;
+      box.style.display = "block";
+      box.innerHTML = '<span style="color:var(--muted);">در حال بررسی سابقه...</span>';
+
+      try {
+        const res = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
         });
-      });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطا");
 
-      // Bootstrap
-      initSpeechEngines();
-      checkHealth();
-      syncCurrentGame();
-    })();
+        box.innerHTML = `<div style="font-size:0.95rem;">${escapeHtml(data.answer)}</div>`;
+      } catch (err) {
+        box.innerHTML = `<span style="color:var(--danger-text);">خطا در دریافت پاسخ</span>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function startAskVoice() {
+      if (!SpeechRec) {
+        showToast("این مرورگر از ورودی صوتی پشتیبانی نمی‌کند.");
+        return;
+      }
+      const rec = new SpeechRec();
+      rec.lang = "fa-IR";
+      rec.interimResults = false;
+      const btn = document.getElementById("askMicBtn");
+      btn.textContent = "⏺️";
+
+      rec.onresult = (e) => {
+        const text = e.results?.[0]?.[0]?.transcript?.trim();
+        if (text) {
+          document.getElementById("askInput").value = text;
+          runAskQuestion(text);
+        }
+      };
+      rec.onend = () => { btn.textContent = "🎙️"; };
+      rec.onerror = () => { btn.textContent = "🎙️"; };
+      rec.start();
+    }
+
+    /* =====================================================================
+     * BOOTSTRAP
+     * ===================================================================== */
+    window.addEventListener("DOMContentLoaded", () => {
+      initTheme();
+      checkForActiveGameOnLoad();
+    });
   </script>
 </body>
 </html>
